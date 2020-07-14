@@ -94,10 +94,7 @@
             doc.body.style.fontSize = 12 * dpr + 'px';
         }, false);
     }
-
-
     refreshRem();
-
     flexible.dpr = win.dpr = dpr;
     flexible.refreshRem = refreshRem;
     flexible.rem2px = function(d) {

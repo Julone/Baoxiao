@@ -1,5 +1,7 @@
 const path = require('path');
 const globalLessVariables = path.resolve(__dirname, './global.variables.less');
+const resolve = (dir) => path.join(__dirname,dir);
+// var postPlugins = [require('postcss-px2rem')({ remUnit: 42, })];
 
 module.exports = {
     publicPath: './',
@@ -9,6 +11,9 @@ module.exports = {
     configureWebpack: config => {
         process.env.NODE_ENV === 'development' && (config.devtool = 'source-map');
     },
+    chainWebpack:config =>{
+      config.resolve.alias.set('api', resolve('src/api/api-middle-page.js'))
+    },
     css: {
       loaderOptions: {
         less: {
@@ -16,13 +21,9 @@ module.exports = {
             hack: `true; @import "${globalLessVariables}";`
           },
         },
-        postcss: {
-          plugins: [
-            require('postcss-px2rem')({
-              remUnit: 42,
-            })
-          ]
-        }
+        // postcss: {
+        //  plugins: postPlugins
+        // }
       }
     },
     devServer: {

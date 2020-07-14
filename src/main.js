@@ -3,7 +3,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import './global/components'
-import './utils/flexible.js'
+// import './utils/flexible.js'
 import './vant.js'
 
 new Vue({
