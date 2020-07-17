@@ -4,7 +4,7 @@ const resolve = (dir) => path.join(__dirname,dir);
 // var postPlugins = [require('postcss-px2rem')({ remUnit: 42, })];
 
 module.exports = {
-    publicPath: './',
+    publicPath: process.env.NODE_ENV === 'development'? '/': './',
     filenameHashing: true,
     assetsDir: 'static',
     productionSourceMap: false,
@@ -30,11 +30,18 @@ module.exports = {
         port: 8080,
         proxy: {
             '^/api': {
-                target: 'http://tm.lilanz.com/',
+                target: 'http://192.168.36.171:8080',
                 changeOrigin: true,
                 pathRewrite: {
                     '^/api': ''
                 }
+            },
+            '^/oa': {
+              target: 'http://tm.lilanz.com/oa/api/lilanzimuser.ashx',
+              changeOrigin: true,
+              pathRewrite: {
+                '^/oa': ''
+              }
             }
         }
     }

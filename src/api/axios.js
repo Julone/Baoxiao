@@ -3,7 +3,7 @@ import 'nprogress/nprogress.css';
 import axios from "axios";
 import store from "@/store";
 import { Toast } from 'vant';
-var axiosIns = new axios({
+var axiosIns = axios.create({
     timeout:6000,
     withCredentials:true,
     validateStatus: function (status) {
