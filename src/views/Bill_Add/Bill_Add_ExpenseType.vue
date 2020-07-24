@@ -1,7 +1,7 @@
 <template>
     <div class="expense-type-container" :style="{height: app_height +'px'}">
         <van-nav-bar title="费用类型" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
-        <div class="sklafjal">
+        <div class="main-content">
             <van-sidebar v-model="activeKey">
                 <van-sidebar-item v-for="el in slidebar" :key="el" :title="el" />
             </van-sidebar>
@@ -60,7 +60,7 @@
             flex: none;
         }
 
-        .sklafjal {
+        .main-content {
             .flex(@a: strech; @j: space-between);
             flex: 1;
             height: 100%;

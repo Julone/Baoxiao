@@ -3,7 +3,7 @@
    <van-nav-bar title="往来单位"  left-text="返回" left-arrow
             @click-left="$store.dispatch('appGoback')" />
             
-        <div class="sklafjal">
+        <div class="main-content">
 
 
 <div style="width: 100%">
@@ -56,7 +56,7 @@
     .van-nav-bar{
         flex:none;
     }
-    .sklafjal{
+    .main-content{
         .flex(@a: strech);
         flex:1;
         height: 100%;

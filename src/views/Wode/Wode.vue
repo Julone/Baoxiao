@@ -1,12 +1,8 @@
 <template>
     <div class="home">
-        <header>
-            <div class="h_button">
-                <div class="icon"><van-icon name="gold-coin-o" /></div>
-                <div class="label">记费用</div>
-            </div>
-
-        </header>
+          <van-empty>
+            维护中...
+       </van-empty>
     </div>
 </template>
 <style lang="less">

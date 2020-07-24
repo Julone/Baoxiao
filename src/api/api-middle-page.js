@@ -85,7 +85,7 @@ export function bill_get_department(){
         method: 'POST',
         params: {
             data: {
-                tzid: 10,
+                tzid: store.getters.activeAccount.khid,
                 rq: "202007"
             }
         }

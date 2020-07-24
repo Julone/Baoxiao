@@ -463,11 +463,7 @@
                 }
             }
 
-            .bottom_saved_buttons {
-                padding: 10px;
-                background: white;
-                right: 0;
-            }
+           
 
             .fapiao {
                 border-top: 2px solid #f4f5f7;

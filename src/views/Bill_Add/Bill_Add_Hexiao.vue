@@ -2,7 +2,7 @@
     <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
         <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
 
-        <div class="sklafjal">
+        <div class="main-content">
             <div style="width: 100%">
                 <van-cell v-for="el in list" :key="el.id" clickable is-link :title="el.zhmc"
                     @click="$emit('chooseWldw',el)" :label="el.khyh" />
@@ -59,7 +59,7 @@
             flex: none;
         }
 
-        .sklafjal {
+        .main-content {
             .flex(@a: strech);
             flex: 1;
             height: 100%;

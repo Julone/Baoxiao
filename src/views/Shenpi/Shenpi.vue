@@ -1,5 +1,7 @@
 <template >
     <div>
-        审批
+       <van-empty>
+            维护中...
+       </van-empty>
     </div>
 </template>

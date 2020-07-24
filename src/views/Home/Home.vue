@@ -9,6 +9,9 @@
         </div>
       </div>
     </header>
+    <main>
+      
+    </main>
   </div>
 </template>
 <script>
