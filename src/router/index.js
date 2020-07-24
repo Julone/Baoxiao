@@ -4,39 +4,93 @@ import RouterViewComponent from './router-view.vue'
 Vue.use(VueRouter);
 const routes = [{
     path: '/',
-    name: 'Home',
-    component: () => import('../views/Home.vue'),
-    redirect: '/bill/add'
+    name: 'home',
+    component: () => import('../views/Home/Home.vue'),
+    meta: {
+      openTabbar: true
+    }
+  },
+  {
+    path: '/account',
+    name: 'account',
+    component: () => import('../views/Account/Account.vue'),
+    meta: {
+      openTabbar: true
+    }
+  },
+  {
+    path: '/shenpi',
+    name: 'shenpi',
+    component: () => import('../views/Shenpi/Shenpi.vue'),
+    meta: {
+      openTabbar: true
+    }
+  },{
+    path: '/wode',
+    name: 'wode',
+    component: () => import('../views/Wode/Wode.vue'),
+    meta: {
+      openTabbar: true
+    }
   },
   {
     path: '/bill',
     component: RouterViewComponent,
     children: [{
         path: 'add',
-        component: () => import('../views/Bill_Add.vue'),
+        name: 'bill_add',
+        component: () => import('../views/Bill_Add/Bill_Add.vue'),
         children: [
           {
             name: 'bill_add_expense_type',
             path: 'expense_type',
-            component: () => import('./../views/Bill_Add_ExpenseType.vue')
+            component: () => import('./../views/Bill_Add/Bill_Add_ExpenseType.vue')
           },
           {
-            name: 'bill_add_expense_city',
-            path: 'expense_city',
-            component: () => import('./../views/Bill_Add_ExpenseCity.vue')
+            name: 'bill_add_hexiao',
+            path: 'hexiao',
+            component: () => import('./../views/Bill_Add/Bill_Add_Hexiao.vue')
           },
           {
             name: 'bill_add_wanlai_danwei',
             path: 'wanlai_danwei',
-            component: () => import('./../views/Bill_Add_WanLaiDanWei.vue')
+            component: () => import('./../views/Bill_Add/Bill_Add_WanLaiDanWei.vue')
+          },
+          {
+            name: 'bill_add_fentang',
+            path: 'fentang',
+            component: () => import('./../views/Bill_Add/Bill_Add_FenTang.vue'),
+            children: [
+              {
+                name: 'bill_add_dept',
+                path: 'bill_add_dept',
+                component: () => import('./../views/Bill_Add/Bill_Add_Dept.vue')
+              }
+            ]
           },
         ]
       },
       {
         path: 'get',
-        name: 'get',
-        alias: [''],
-        component: () => import('../views/Bill_Get.vue')
+        name: 'bill_get',
+        component: RouterViewComponent,
+        children: [
+          {
+            path: '',
+            name:'bill_get_new',
+            component: () => import('../views/Bill_Get/Bill_Get.vue'),
+          },
+          {
+            path: 'type',
+            name:'bill_get_danju_type',
+            component: () => import('../views/Bill_Get/Bill_Get_DanjuType.vue'),
+          },
+          {
+            path: 'type',
+            name:'bill_get_danju_type',
+            component: () => import('../views/Bill_Get/Bill_Get_DanjuType.vue'),
+          },
+        ]
       }
     ]
   }

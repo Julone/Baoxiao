@@ -6,6 +6,7 @@ import './global/components'
 import './global/filter'
 // import './utils/flexible.js'
 import './vant.js'
+Vue.prototype.$eventBus = new Vue();
 
 new Vue({
   router,

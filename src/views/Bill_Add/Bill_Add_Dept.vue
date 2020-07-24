@@ -1,20 +1,17 @@
 <template>
     <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
-   <van-nav-bar title="往来单位"  left-text="返回" left-arrow
+   <van-nav-bar title="部门选择"  left-text="返回" left-arrow
             @click-left="$store.dispatch('appGoback')" />
         <div class="sklafjal">
-
 <div style="width: 100%">
-    <!-- {{curTypeList}} -->
-    <!-- 42 -->
- <van-cell v-for="el in list" :key="el.id" :title="el.zhmc"  />
+ <van-cell v-for="el in list" :key="el.id" clickable is-link :title="el.name" @click="$emit('select_dept',el)" :label="el.khyh"  />
 </div>
     </div>
     </div>
 </template>
 <script>
     import {
-        bill_get_expense_wldw
+        bill_get_department
     } from 'api'
     import {mapGetters} from 'vuex'
     
@@ -24,21 +21,24 @@
                 list: []
             }
         },
+    
         computed:{
             curTypeList(){
-                console.log(this.typeList);
                 return this.typeList[this.activeKey]
             },
             ...mapGetters(['app_height'])
         },
-     
-        created() {
-            bill_get_expense_wldw().then(r => {
+        created(){
+             bill_get_department().then(r => {
                 if(r.errcode==0 && r.data.length){
                     this.list = r.data.map(el=>el)
-
                 }
             })
+
+        },
+     
+        activated() {
+           
         },
     }
 </script>
@@ -56,6 +56,7 @@
         .flex(@a: strech);
         flex:1;
         height: 100%;
+        overflow: scroll;
     }
 
 }

@@ -1,3 +1,4 @@
 import Vue from 'vue';
-// import Julone from './../components/julone.vue';
-// Vue.component('julone',Julone);
+import accountPicker from './../components/AccountPicker.vue';
+Vue.component('accountPicker',accountPicker);
+

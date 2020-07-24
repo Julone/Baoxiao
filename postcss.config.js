@@ -8,7 +8,7 @@
         unitPrecision: 5, //指定‘px’转换为视口单位值的小数位数（很多时候无法整除）
         viewportUnit: 'vw', //指定需要转换成的视口单位，建议使用vw
         selectorBlankList: ['ignore', 'tab-bar'], //指定不需要转换的类
-        minPixelValue: 1, //小于或等于‘1px’不转换为视口单位
+        minPixelValue: 2, //小于或等于‘1px’不转换为视口单位
         mediaQuery: false,//允许在媒体查询中转换为‘px’
         exclude:[/Tabbar/]  //不需要转化的组件文件名正则，必须是正则表达式
       }

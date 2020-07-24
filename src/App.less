@@ -1,6 +1,6 @@
 @import url('~normalize.css');
 #nprogress {
-    @color: #1facb0;
+    @color: #ff5c5f;
     .peg {
         box-shadow: 0 0 10px @color, 0 0 5px darken(@color,20%) !important;
     }
@@ -21,4 +21,27 @@
 }
 [paddingless]{
     padding: 0 !important;
+}
+[marginless]{
+    margin: 0 !important;
+}
+a.blue-text{
+    @c:#1989fa;
+    color: @c;
+    cursor: pointer;
+    &:active{
+        color: lighten(@c,30%);
+        text-decoration: underline;
+    }
+}
+.flex{
+    .flex();
+}
+.erji-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom:0;
+    z-index: 10;
 }
