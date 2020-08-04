@@ -1,4 +1,4 @@
-const keyName = 'julone-baoxiao-';
+const keyName = 'julone-bx-';
 /**
  * 判断是否为空
  */

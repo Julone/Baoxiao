@@ -11,7 +11,7 @@ import {
 import router from './../router'
 var axiosInitialConfig = {
   timeout: 10000,
-  withCredentials: true,
+  withCredentials: false,
   validateStatus: function (status) {
     return status >= 200 && status <= 500
   }
@@ -54,7 +54,6 @@ axiosBase.interceptors.response.use(res => {
 })
 
 export const axiosByFormData = (params) => {
-  params = axios_addToken(params);
   var config = {
     headers: {
       'content-type': 'application/x-www-form-urlencoded'
@@ -64,7 +63,6 @@ export const axiosByFormData = (params) => {
   return axiosBase(Object.assign(params, config))
 }
 export const axiosSilent = (config) => {
-    config = axios_addToken(config);
     var axiosInstance = Axios.create(axiosInitialConfig);
     axiosInstance.interceptors.response.use(res => {
       const status = Number(res.status) || 200

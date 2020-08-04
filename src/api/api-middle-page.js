@@ -1,5 +1,5 @@
-import axios from './axios';
-var url = '/api';
+import axios, {axiosSilent} from './axios';
+var url = process.env.NODE_ENV == 'development' ? '/api' : 'http://webt.lilang.com/api-proxy/cost-api';
 import store from '@/store'
 
 export function bill_get_expense_type() {
@@ -16,7 +16,7 @@ export function bill_get_ywcj() {
 }
 export function auth_get_user_info(apptoken) {
     return axios({
-        url: '/oa',
+        url: 'http://tm.lilanz.com/oa/api/lilanzimuser.ashx',
         method: 'GET',
         params: {
             apptoken: apptoken
@@ -36,59 +36,224 @@ export function bill_get_expense_wldw(khid = 2) {
     })
 }
 export function bill_set_data(data) {
-    console.log(store)
+    // var postMessage = {
+    //     "tzid": 1,
+    //     "khid": 1,
+    //     "zdr": "phq",
+    //     "xflx": {
+    //         "fydlmc": "办公",
+    //         "fylxmc": "鼠标"
+    //     },
+    //     "ywcj": {
+    //         "djlx": 12611,
+    //         "id": 7187
+    //     },
+    //     "wanlai_danwei": {
+    //         "zhmc": "上海科才企业管理咨询有限公司",
+    //         "zhbj": 0,
+    //         "zhid": 123
+    //     },
+    //     "ft_info": [],
+    //     "ny": "202006",
+    //     "rq": "2020-06-06",
+    //     "yhzh": "",
+    //     "khyh": "",
+    //     "je": 30,
+    //     "bz": "备注"
+    // }
+    var formData = {
+        "wdpId": 140,
+        "wdplx": 12611,
+        "tzid": store.getters.activeAccount.khid,
+        "khid": store.getters.activeAccount.khid,
+        "zdr": store.getters.userinfo.cname,
+        "ny": data.ny,
+        "rq": data.rq,
+        "yhzh": "",
+        "khyh": "",
+        "je": data.je,
+        "bz": data.bz,
+        xflx: {
+            "fydlmc": data.fydlmc,
+            "fylxmc": data.fylxmc,
+        },
+        "ft_info": data.ft_info,
+        "ywcj": {
+            "djlx": data.djlx,
+            "id": data.djlb
+        },
+        wanlai_danwei: {
+            "zhid": data.zhid,
+            "zhmc": data.zhmc,
+            "zhbj": data.zhbj,
+        },
+        dgbs: data.dgbs
+    }
+    if (data.update_id) {
+        formData.id = data.update_id;
+    }
     return axios({
         url: url + '/setDj',
         method: 'POST',
-        params: {
+        data: {
+            data: formData
+        }
+    })
+}
+
+export function bill_del_danju(id) {
+    return axios({
+        url: url + '/delDjgById',
+        method: 'POST',
+        data: {
             data: {
-                "wdpId": 140,
-                "wdplx": 12611,
-                "tzid": store.getters.activeAccount.khid,
-                "khid": store.getters.activeAccount.khid,
-                "djlx": data.djlx,
-                "djlb": data.djlb,
-                "zdr": store.getters.userinfo.cname,
-                "ny": data.ny,
-                "rq": data.rq,
-                "yhzh": "",
-                "khyh": "",            
-                "zhmc":data.zhmc,
-                "zhid": data.zhid,
-                "je": data.je,
-                "zhbj": data.zhbj,
-                "bz": data.bz,
-                "fydlmc": data.fydlmc,
-                "fylxmc": data.fylxmc
+                id
             }
         }
     })
 }
 
-export function bill_get_hexiao(){
+export function bill_get_hexiao({zhmc,wdpje}) {
     return axios({
         url: url + '/chooseWdpfy',
         method: 'POST',
         params: {
             data: {
-                "tzid":store.getters.activeAccount.khid,
-                "zhmc":store.getters.userinfo.cname,
-                "dpje":50
+                "tzid": store.getters.activeAccount.khid,
+                "zhmc": zhmc,
+                "dpje": wdpje
             }
         }
     })
 }
 
-export function bill_get_department(){
+export function bill_get_department({
+    page,
+    limit
+}) {
     return axios({
         url: url + '/getDeptListByTzidAndRq',
         method: 'POST',
         params: {
             data: {
                 tzid: store.getters.activeAccount.khid,
-                rq: "202007"
+                rq: "202007",
+                page,
+                limit
             }
         }
     })
 
 }
+export function account_get_danjuList({
+    status,
+    group,
+    djlb
+}) {
+    return axios({
+        url: url + '/getDjList',
+        method: 'POST',
+        params: {
+            data: {
+                "username": store.getters.userinfo.cname,
+                "status": status,
+                "group": group,
+                "djlb": djlb
+            }
+        }
+    })
+}
+
+export function bill_add_get_weidaopiao_money({
+    zhmc
+}) {
+    return axiosSilent({
+        url: url + '/getWdpjeByTzidAndZhmc',
+        method: 'POST',
+        params: {
+            data: {
+                tzid: store.getters.activeAccount.khid,
+                zhmc: zhmc
+            }
+        }
+    })
+}
+export function bill_edit_get_danjuInfo(id) {
+    return axios({
+        url: url + '/getDjMsgById',
+        method: 'POST',
+        params: {
+            data: {
+                id: id
+            }
+        }
+    })
+}
+export function bill_edit_remove_danju(id) {
+    return axios({
+        url: url + '/getDjMsgById',
+        method: 'POST',
+        params: {
+            data: {
+                id: id
+            }
+        }
+    })
+}
+
+export function bill_get_skzh() {
+    return axios({
+        url: url + '/getSkzhByKhid',
+        method: 'POST',
+        data: {
+            data: {
+                // khid: store.getters.userinfo.id
+                khid: 9
+            }
+        }
+    })
+}
+
+export function bill_set_skzh({
+    zhlx,
+    zhmc,
+    yhh
+}) {
+    // var a = {
+    //     "tzid": 1,
+    //     "khid": 1,
+    //     "name": "phq_test",
+    //     "zhbj": 0,
+    //     "zhmc": "phq_test",
+    //     "yhzh": "123456",
+    //     "khyh": "测试银行",
+    //     "yhhh": "222",
+    //     "bankProvince": "福建",
+    //     "bankCity": "晋江",
+    //     "zhlx": 2
+    // }
+    // {
+    //     tzid:m,
+    //     wldw: {
+
+    //     },
+    //     skzh: {
+
+    //     }
+    // }
+    return axios({
+        url: url + '/setWldw',
+        method: 'POST',
+        data: {
+            data: {
+                "tzid": store.getters.activeAccount.khid,
+                "userid": store.getters.userinfo.id,
+                "zhlx": zhlx,
+                "zhmc": zhmc,
+                "yhhh": yhh,
+
+            }
+        }
+    })
+}
+

@@ -36,13 +36,7 @@ module.exports = {
                     '^/api': ''
                 }
             },
-            '^/oa': {
-              target: 'http://tm.lilanz.com/oa/api/lilanzimuser.ashx',
-              changeOrigin: true,
-              pathRewrite: {
-                '^/oa': ''
-              }
-            }
+         
         }
     }
 }

@@ -1,7 +1,6 @@
 <template>
-    <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
+    <div class="container" :style="{height: app_height +'px'}">
         <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
-
         <div class="main-content">
             <div style="width: 100%">
                 <van-cell v-for="el in list" :key="el.id" clickable is-link :title="el.zhmc"
@@ -24,9 +23,12 @@
     export default {
         data() {
             return {
-                list: []
+                list: [],
+                wdpje: this.formdata.wdpje,
+                zhmc: this.formdata.wanlai_danwei.zhmc
             }
         },
+        props: ['formdata'],
 
         computed: {
             curTypeList() {
@@ -37,7 +39,7 @@
         },
 
         created() {
-            bill_get_hexiao().then(r => {
+            bill_get_hexiao({wdpje: this.wdpje,zhmc:this.zhmc}).then(r => {
                 if (r.errcode == 0 && r.data.length) {
                     this.list = r.data.map(el => el)
 
@@ -48,12 +50,13 @@
     }
 </script>
 <style lang="less">
-    .wanlai-danwei-container {
+    .container {
         // .flex(@d:column;@j:space-around);
         height: 100vh;
         display: flex;
         overflow: hidden;
         flex-direction: column;
+        background: white;
 
         .van-nav-bar {
             flex: none;

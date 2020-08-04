@@ -1,9 +1,13 @@
 <template>
     <div>
-        <van-button size="small" borderless bgless type="info" plain @click="show = true">
+        <van-button :size="size" borderless bgless :round="round" 
+            type="info" :plain="!white" @click="show = true" style="zoom:1.1">
             <span v-if="activeAccount" class="flex">
-                <van-icon name="cluster-o" size="4vw" style="margin-right:1vw"/>{{activeAccount.khlbmc}}</span>
-            <span v-else>选择套账</span>
+               {{activeAccount.khlbmc}}  <van-icon name="arrow-down" size="3vw" style="margin-left:1vw"/>
+            </span>
+            <span v-else>
+                选择套账 <van-icon name="arrow-down" size="3vw" style="margin-left:1vw"/>
+            </span>
         </van-button>
         <van-popup v-model="show" get-container="body" position="bottom">
             <van-picker title="套账切换" show-toolbar visible-item-count="10" item-height="34" default-index="0"
@@ -20,6 +24,20 @@
             return {
                 show: false
             }
+        },
+        props: {
+            white: {
+                default: false,
+                type:Boolean
+            },
+            size: {
+                default:'small',
+                type: String
+            },
+            round: {
+                default: false,
+                type:Boolean
+            },
         },
         computed: {
             ...mapGetters(['accountList', 'activeAccount']),

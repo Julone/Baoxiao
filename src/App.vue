@@ -1,6 +1,12 @@
 <template>
   <div id="app">
-    <router-view :key="freshToken"></router-view>
+    <!-- 顺序不能反 -->
+    <keep-alive> 
+      <router-view :key="freshToken" v-if="$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
+    </keep-alive>
+    <transition name="van-fade" mode="out-in">
+      <router-view :key="freshToken" v-if="!$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
+    </transition>
     <van-tabbar v-model="activeTabbar" v-if="isShowTabbar">
       <van-tabbar-item name="home" icon="home-o">首页</van-tabbar-item>
       <van-tabbar-item name="account" icon="balance-list-o">账本</van-tabbar-item>
@@ -10,12 +16,14 @@
   </div>
 </template>
 <script>
+import {mapGetters} from 'vuex'
 export default {
   data(){
     return {
-      freshToken: 0
+      freshToken: 0,
     }
   },
+ 
   computed:{ 
     isShowTabbar(){
       return this.$route.meta && this.$route.meta.openTabbar
@@ -27,21 +35,19 @@ export default {
       set(name){
         return this.$router.push({name})
       }
-    }
+    },
+    ...mapGetters(['app_height'])
   },
   methods: {
     onAppResize(){
       this.$store.commit('set_appHeight', window.innerHeight);
-    },
-    onAppStart(){
-      this.onAppResize();
     }
   },
   created(){
-    this.$store.dispatch('auth_getUserInfo')
+    this.$store.dispatch('appStart')
   },
   mounted(){
-    this.onAppStart();
+    this.onAppResize();
     window.addEventListener('resize', this.onAppResize);
     this.$eventBus.$on('refreshView', ()=> this.freshToken++ )
   }
@@ -53,12 +59,23 @@ export default {
 *{
   margin: 0;
   padding: 0;
+  // border: 1px solid red;
+  // box-sizing: border-box;
 }
 body{
   width: 100%;
   background-color: rgb(240,242,245);
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
+  
+}
 
+#app{
+    font-family: Helvetica Neue,Tahoma,Arial,PingFangSC-Regular,Hiragino Sans GB,Microsoft Yahei,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    touch-action: manipulation;
+    text-size-adjust: none;
 }
 </style>

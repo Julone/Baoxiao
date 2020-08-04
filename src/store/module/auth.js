@@ -1,4 +1,4 @@
-import { getStorage,setStorage} from './../../utils/storage'
+import { getStorage,setStorage,validatenull} from './../../utils/storage'
 import {auth_get_user_info} from 'api'
 import {Toast} from 'vant'
 export default {
@@ -14,7 +14,7 @@ export default {
         //     zbid: 1
         // }
         userinfo: getStorage({name: 'userinfo'}) || {},
-        activeAccount: getStorage({name: 'activeAccount'}) || null
+        activeAccount: getStorage({name: 'activeAccount'}) || {}
         // {
         //     onoff: 1, id: 25604, cname: "李祖龙"
         // }
@@ -26,11 +26,11 @@ export default {
         },
         SET_ACTIVE_ACCOUNT(state,account){
             state.activeAccount = account;
-            setStorage({name: 'activeAccount',type:'session', content: account})
+            setStorage({name: 'activeAccount', content: account})
         },
         SET_ACCOUNT(state,value){
             state.accountList = value
-            setStorage({name: 'accountList',type:'session', content: value})
+            setStorage({name: 'accountList', content: value})
         },
         SET_USERINFO(state,userinfo){
             state.userinfo = userinfo;
@@ -39,20 +39,31 @@ export default {
     },
     actions:{
         auth_getUserInfo({state,commit, dispatch}, val){
-            auth_get_user_info(state.apptoken).then(r=>{
-                commit('SET_ACCOUNT',r.data.account );
-                commit('SET_USERINFO',r.data.info[0]);
-                dispatch('choose_active_account',r.data.account[0]);
-            })
+            if(validatenull(state.userinfo) || validatenull(state.accountList) || validatenull(state.activeAccount)){
+                return auth_get_user_info(state.apptoken).then(r=>{
+                    if(r.errcode == 0) {
+                        commit('SET_ACCOUNT',r.data.account );
+                        commit('SET_USERINFO',r.data.info[0]);
+                        dispatch('choose_active_account',r.data.account[0]);             
+                        return true;
+                    }else {
+                        return false;
+                    }
+                }).catch(e => {
+                    return false;
+                })
+            }else{
+                return Promise.resolve(true)
+            }
         },
         choose_active_account({state,commit}, val){
             commit('SET_ACTIVE_ACCOUNT', val);
         }
     },
     getters: {
-        apptoken: state => state.apptoken,
-        activeAccount: state => state.activeAccount,
-        accountList: state => state.accountList,
-        userinfo: state => state.userinfo
+        apptoken: state => state.apptoken || '',
+        activeAccount: state => state.activeAccount || [],
+        accountList: state => state.accountList || {},
+        userinfo: state => state.userinfo || {}
     }
 }

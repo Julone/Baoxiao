@@ -1,5 +1,5 @@
 <template>
-    <div class="danju-type-container" :style="{height: app_height +'px'}">
+    <div class="danju-type-container" >
         <van-nav-bar title="请选择单据类型" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
             <van-collapse v-model="activeCollpase" style="width:100%">
@@ -29,10 +29,7 @@
                 collapseList: []
             }
         },
-        computed: {
-            ...mapGetters(['app_height'])
-        },
-
+  
         created() {
             this.collapseList = [{
                     title: '申请及借款',
@@ -77,7 +74,7 @@
 <style lang="less">
     .danju-type-container {
         // .flex(@d:column;@j:space-around);
-        height: 100vh;
+        height: 100%;
         display: flex;
         overflow: hidden;
         flex-direction: column;

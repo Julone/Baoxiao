@@ -1,54 +1,21 @@
 <template>
-    <div class="bill_add_container">
-        <div class="bill_add_wrapper" ref="mainContent">
-            <van-nav-bar title="新建费用" fixed placeholder style="height:12vw" left-text="返回" left-arrow
+    <div class="bill_edit_container">
+        <div class="bill_edit_wrapper" ref="mainContent">
+            <!-- header -->
+            <!-- left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" -->
+            <van-nav-bar title="费用明细" fixed placeholder style="height:12vw" left-text="返回" left-arrow
                 @click-left="$store.dispatch('appGoback')">
                 <template #right>
                     <accountPicker></accountPicker>
                 </template>
             </van-nav-bar>
             <!-- expense_type -->
-            <van-form ref="form" @submit="onSubmit" novalidate>
-                <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx" class="xflx"
-                    @click="go2sub({name: 'bill_add_expense_type'})" required :is-link="false" placeholder="请选择消费类型"
+            <van-form v-if="initOK" ref="form" @submit="onSubmit">
+                <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx"
+                    @click="go2sub({name: 'bill_edit_expense_type'})" required is-link placeholder="请选择消费类型"
                     left-icon="gold-coin-o" :rules="[{ required: true, message: '请选择消费类型',trigger:'onChange' }]">
                 </van-field>
-                <div class="switch-cell marginTop">
-                    <div class="left">
-                        <span v-if="form.duisi == true">个人费用</span>
-                        <span v-if="form.duisi == false">对公业务</span>
-                    </div>
-                    <div class="right">
-                        <!-- v-if="form.xflx.dgbs == 2" -->
-                        <van-button v-if="form.xflx.dgbs == 2" native-type="button" size="mini" type="info" plain 
-                            @click="form.duisi = !form.duisi" icon="exchange" >
-                            切换为<span>{{form.duisi?'对公业务费用':'个人费用' }}</span>
-                        </van-button>
-                    </div>
-                </div>
-           
-                <!-- 对私业务 -->
-                <template v-if="form.duisi">
-                    <van-field v-model="form.bcdp" label="消费金额" clickable required :rules="regRules.money" name="xfje">
-                        <template #input>
-                            <div class="bcdp-item">
-                                <span>CNY</span>
-                                <input type="number" step="0.01" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
-                            </div>
-                        </template>
-                    </van-field>
-                    <van-cell title="消费日期" @click="openDatePopup" clickable required is-link>
-                        {{form.dprq | date('yyyy-MM-dd')}}
-                        <van-popup get-container="body" v-model="dprqStatus" position="bottom">
-                            <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="formatter"
-                                @confirm="onDateConfirm" @cancel="dprqStatus=false" />
-                        </van-popup>
-                    </van-cell>
-                </template>
-                <!-- 对公全部到票业务 -->
-                <template v-if="!form.duisi">
-                    <van-cell-group class="">
+                <van-cell-group class="marginTop">
                     <van-field v-model="form.ywcj.mc" clickable readonly name="ywcj" @click="ywcjStatus = true" required
                         is-link label="业务场景">
                     </van-field>
@@ -58,118 +25,118 @@
                         </van-picker>
                     </van-popup>
                 </van-cell-group>
-                    <template v-if="form.ywcj.id == 7187">
-                        <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
-                            name="xfje">
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="number" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
-                            {{form.dprq | date('yyyy-MM-dd')}}
-                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
-                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="formatter"
-                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
-                            </van-popup>
-                        </van-cell>
-                        <van-field label="费用金额" v-model="form.bcdp" readonly required>
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="number" v-model="form.bcdp" readonly placeholder="自动计算">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
-                                placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
-                            </van-field>
-                        </van-cell-group>
-                    </template>
-                    <!-- 对公未到票业务 -->
-                    <template v-if="form.ywcj.id == 7188">
-                        <van-field v-model="form.bcdp" label="未到票" clickable required :rules="regRules.money"
-                            name="xfje">
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="text" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell title="预计到票日期" @click="openDatePopup" clickable required is-link>
-                            {{form.dprq | date('yyyy-MM-dd')}}
-                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
-                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
-                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
-                            </van-popup>
-                        </van-cell>
-                        <van-field label="费用金额" v-model="form.bcdp" readonly required>
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="text" v-model="form.bcdp" readonly placeholder="自动计算">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
-                                placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
-                            </van-field>
-                        </van-cell-group>
-                    </template>
-                    <!-- 对公全部到票业务 -->
-                    <template v-if="form.ywcj.id == 7189">
-                        <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
-                            name="xfje">
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="number" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
-                            {{form.dprq | date('yyyy-MM-dd')}}
-                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
-                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
-                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
-                            </van-popup>
-                        </van-cell>
-                        <van-field v-model="form.bcdp" label="费用金额" clickable required>
-                            <template #input>
-                                <div class="bcdp-item">
-                                    <span>CNY</span>
-                                    <input type="number" v-model="form.bcdp" readonly placeholder="自动计算">
-                                </div>
-                            </template>
-                        </van-field>
-                        <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
-                                placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
-                            </van-field>
-                        </van-cell-group>
-                        <van-cell-group border class="marginTop cell-group">
-                            <div class="title">核销历史费用</div>
-                            <div class="content">
-                                <van-button @click="go2sub({name: 'bill_add_hexiao'})" native-type="button" block
-                                    borderless type="info" plain>选取核销历史费用</van-button>
-                                <div align="center" style="padding-bottom:20px;font-size:80%">当前往来单位下剩余: ￥{{form.wdpje}}未到账</div>
+                <!-- 对公全部到票业务 -->
+                <template v-if="form.ywcj.id == 7187">
+                    <van-field v-model="form.bcdp" label="本次到票" clickable required
+                        :rules="[{ required: true, message: '请输入消费金额' }]" name="xfje">
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="number" placeholder="请输入金额" v-model="form.bcdp">
                             </div>
-                        </van-cell-group>
-                    </template>
+                        </template>
+                    </van-field>
+                    <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
+                        {{form.dprq | date('yyyy-MM-dd')}}
+                        <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                            <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
+                                @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                        </van-popup>
+                    </van-cell>
+                    <van-field label="费用金额" v-model="form.bcdp" readonly required>
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="number" v-model="form.bcdp" readonly placeholder="自动计算">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell-group :border="false">
+                        <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            @click="go2sub({name: 'bill_edit_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                            placeholder="请选择往来单位" readonly
+                            :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                        </van-field>
+                    </van-cell-group>
+                </template>
+                <!-- 对公未到票业务 -->
+                <template v-if="form.ywcj.id == 7188">
+                    <van-field v-model="form.bcdp" label="未到票" clickable required
+                        :rules="[{ required: true, message: '请输入消费金额' }]" name="xfje">
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="text" placeholder="请输入金额" v-model="form.bcdp">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell title="预计到票日期" @click="openDatePopup" clickable required is-link>
+                        {{form.dprq | date('yyyy-MM-dd')}}
+                        <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                            <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
+                                @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                        </van-popup>
+                    </van-cell>
+                    <van-field label="费用金额" v-model="form.bcdp" readonly required>
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="text" v-model="form.bcdp" readonly placeholder="自动计算">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell-group :border="false">
+                        <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            @click="go2sub({name: 'bill_edit_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                            placeholder="请选择往来单位" readonly
+                            :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                        </van-field>
+                    </van-cell-group>
+                </template>
+                <!-- 对公全部到票业务 -->
+                <template v-if="form.ywcj.id == 7189">
+                    <van-field v-model="form.bcdp" label="本次到票" clickable required
+                        :rules="[{ required: true, message: '请输入到票金额' }]" name="xfje">
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="number" placeholder="请输入金额" v-model="form.bcdp">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
+                        {{form.dprq | date('yyyy-MM-dd')}}
+                        <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                            <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
+                                @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                        </van-popup>
+                    </van-cell>
+                    <van-field v-model="form.bcdp" label="费用金额" clickable required>
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="number" v-model="bcdp" readonly placeholder="自动计算">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell-group :border="false">
+                        <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            @click="go2sub({name: 'bill_edit_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                            placeholder="请选择往来单位" readonly
+                            :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                        </van-field>
+                    </van-cell-group>
+                    <van-cell-group border class="marginTop cell-group">
+                        <div class="title">核销历史费用</div>
+                        <div class="content">
+                            <van-button @click="go2sub({name: 'bill_edit_hexiao'})" native-type="button" block borderless
+                                type="info" plain>选取核销历史费用</van-button>
+                            <div align="center" style="padding-bottom:20px">当前往来单位下剩余: ￥0.00未到账</div>
+                        </div>
+                    </van-cell-group>
                 </template>
                 <van-cell-group border>
                     <van-field label="备注" border type="textarea" v-model="form.liuyan" name="liuyan" placeholder="请输入留言"
@@ -200,7 +167,7 @@
                                 </van-cell>
                                 <template #right>
                                     <div class="right-swipe-item">
-                                        <van-button style="height:100%"  type="danger" icon="cross" class="delete-button" />
+                                        <van-button round plain type="danger" icon="cross" class="delete-button" />
                                     </div>
                                 </template>
                             </van-swipe-cell>
@@ -227,12 +194,12 @@
                 <!-- 底部保存 -->
                 <div class="van-tabbar--fixed bottom_saved_buttons">
                     <van-row>
-                        <van-col span="12">
-                            <van-button @click="onSaveAgain" native-type="button" type="default" borderless
-                                style="background:rgb(247,247,247)" block>再记一笔</van-button>
+                        <van-col span="7">
+                            <van-button @click="onRemove" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block>移除</van-button>
                         </van-col>
                         <van-col span="1"></van-col>
-                        <van-col span="11">
+                        <van-col span="16">
                             <van-button @click="onSave" native-type="button" type="info" borderless block>保存
                             </van-button>
                         </van-col>
@@ -241,11 +208,11 @@
             </van-form>
         </div>
         <!-- <transition name="van-slide-right">
-            <div class="erji-view" v-if="isErjiRoute" >
+            <div class="erji-view" v-if="isErjiRoute">
                 <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"></router-view>
             </div>
         </transition> -->
-        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
+         <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
                 <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"></router-view>
             </transition>
@@ -254,9 +221,9 @@
 </template>
 <script>
     import {
-        bill_get_ywcj,
         bill_set_data,
-        bill_add_get_weidaopiao_money
+        bill_edit_get_danjuInfo,
+        bill_edit_remove_danju
     } from 'api'
     import {
         dateFormat
@@ -267,7 +234,6 @@
     export default {
         data() {
             return {
-                // ywcjColumns: [],
                 ywcjStatus: false,
                 dprq_popup: new Date(),
                 dprqStatus: false,
@@ -277,17 +243,14 @@
                 fp_list: [],
                 form: {
                     xflx: {},
-                    duisi: true,
                     ywcj: {},
                     bcdp: "",
                     dprq: new Date(),
                     wanlai_danwei: {},
                     liuyan: '',
-                    ft_info: [],
-                    wdpje:0
+                    ft_info: []
                 },
                 saveId: [],
-
             }
         },
         watch: {
@@ -300,30 +263,43 @@
             async 'form.ywcj.id'(val) {
                 await this.$nextTick();
                 this.$refs.form && this.$refs.form.resetValidation();
-                this.getHexiaoFeiyong();
             }
         },
         computed: {
             isErjiRoute: {
-                get() {
-                    return this.$route.name != 'bill_add'
+                get(){
+                     return this.$route.name != 'bill_edit'
                 },
-                set(val) {}
+                set(){
+
+                }
             },
             ...mapGetters({
-                ywcjColumns: 'ywcjList',
-                regRules: 'regRules'
+                ywcjColumns: 'ywcjList'
             })
         },
         created() {
             if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
                 //二级路由处理
                 this.$router.push({
-                    name: 'bill_add'
+                    name: 'bill_edit'
                 })
             }
+            bill_edit_get_danjuInfo(this.$route.query.dj_id).then(r=>{
+                console.log(r);
+                var data = r.data || {};
+                this.form = {
+                    bcdp: Number(data.je).toFixed(2),
+                    dprq: new Date(data.rq),
+                    ft_info: [],
+                    liuyan: data.bz || "",
+                    wanlai_danwei: data.wanlai_danwei || {},
+                    xflx: data.xflx,
+                    ywcj: data.ywcj,
+                }
+            })
             // Promise.all([this.getDataYwcj()]).then(r => {
-            // this.initOK = true;
+            this.initOK = true;
             // })
             this.form.ywcj = this.ywcjColumns[0]
             this.fp_list = [{
@@ -332,20 +308,8 @@
                 date: '2020-07-12',
                 money: '2300.00'
             }]
-
         },
         methods: {
-            getHexiaoFeiyong(){
-                 if(this.form.ywcj.id == 7189) {
-                    var zhmc = this.form.wanlai_danwei.zhmc;
-                    bill_add_get_weidaopiao_money({zhmc}).then(r=>{
-                        console.log(r);
-                        this.form.wdpje = Number(r.data).toFixed(2);
-                    }).catch(e=>{
-                        console.log(e);
-                    })
-                }
-            },
             go2sub(route) {
                 route = Object.assign(route, {
                     params: {
@@ -354,19 +318,13 @@
                 })
                 this.$router.push(route)
             },
-            onMoneyBlur(){
-                this.$refs.form.validate('xfje').then(r => {
-                    this.form.bcdp = Number(this.form.bcdp).toFixed(2);
-                }).catch(e => {
-                    this.$toast.fail(e.message);
-                })
-            },
             onSave() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(r => {
-                        if (this.$route.query.from) {
+                        if (this.$route.query.from_route) {
+                            console.log(this.$route);
                             this.$router.push({
-                                name: this.$route.query.from,
+                                name: this.$route.query.from_route,
                                 query: {
                                     fyid: this.saveId.join('_')
                                 }
@@ -378,11 +336,22 @@
             openFentang() {
                 return this.$refs.form.validate('xfje').then(r => {
                     this.$router.push({
-                        name: 'bill_add_fentang'
+                        path: '/bill/edit/fentang'
                     })
                 }).catch(e => {
                     this.$refs.form.scrollToField('xflx');
                     this.$toast.fail(e.message);
+                })
+            },
+            onRemove(){
+                console.log(this.$route);
+                this.$dialog.confirm({
+                    title: '删除',
+                    message: '是否确定要移除此单据?',
+                }).then(r=>{
+                    bill_edit_remove_danju().then(r=>{
+
+                    })
                 })
             },
             async onSaveAgain() {
@@ -403,7 +372,7 @@
 
             },
             onSubmit() {
-                var djlx = this.form.ywcj.djlx;
+                var djlx = this.form.xflx.id;
                 var djlb = this.form.ywcj.id;
                 var ny = dateFormat(this.form.dprq, 'yyyyMM');
                 var rq = dateFormat(this.form.dprq, 'yyyy-MM-dd');
@@ -411,10 +380,11 @@
                 var zhmc = this.form.wanlai_danwei.zhmc;
                 var je = this.form.bcdp;
                 var zhbj = '0';
-                var bz = this.form.beizu;
+                var bz = this.form.liuyan;
                 var fydlmc = this.form.xflx.fydlmc;
                 var fylxmc = this.form.xflx.fylxmc;
-                var dgbs = this.form.duisi? 2 : 1;
+                var update_id = this.$route.query.dj_id
+                console.dir(this.form);
                 return new Promise((res, rej) => {
                     bill_set_data({
                         djlx,
@@ -427,7 +397,7 @@
                         fydlmc,
                         fylxmc,
                         zhmc,
-                        dgbs
+                        update_id
                     }).then(r => {
                         console.log(r);
                         if (r.errcode == 0) {
@@ -443,13 +413,12 @@
             },
             chooseXflx(val) {
                 this.form.xflx = val;
-                this.form.duisi = val.dgbs == 0;
                 this.$store.dispatch('appGoback');
             },
             chooseWldw(val) {
                 this.form.wanlai_danwei = val;
+                console.log(val);
                 this.$store.dispatch('appGoback');
-                this.getHexiaoFeiyong();
             },
             onYwcjConfirm(value) {
                 this.form.ywcj = value;
@@ -509,34 +478,12 @@
         }
     }
 
-    .bill_add_container {
+    .bill_edit_container {
 
-        .bill_add_wrapper {
+        .bill_edit_wrapper {
 
             .van-form {
                 padding-bottom: 100px;
-            }
-
-            .xflx {
-                .van-field__left-icon i {
-                    font-size: 26px;
-                    color: #777;
-                    margin-left: 5px;
-                }
-            }
-
-            .switch-cell {
-                .flex(@j: space-between; );
-                padding: 10px 5px 10px;
-                background: white;
-                margin-botttom: -10px;
-                font-size: 13px;
-
-                .left {
-                    border-left: 5px solid @j_main_color;
-                    padding-left: 6px;
-                    font-size: 600;
-                }
             }
 
             .van-cell:not(.avg_cell) {
@@ -630,15 +577,15 @@
             }
 
             .right-swipe-item {
-                width: 100%;
-                // height: 60px;
-                height: 100%;;
+                width: 60px;
+                height: 60px;
+                ;
                 .flex();
 
                 .delete-button {
-                    // width: 45px;
-                    // height: 45px;
-                    // ;
+                    width: 45px;
+                    height: 45px;
+                    ;
                 }
             }
 

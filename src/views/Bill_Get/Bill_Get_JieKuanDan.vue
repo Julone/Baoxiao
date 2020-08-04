@@ -1,5 +1,5 @@
 <template>
-    <div class="container" :style="{height: app_height +'px'}">
+    <div class="container" >
         <van-nav-bar title="选取借款单" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
             <van-empty>
@@ -23,9 +23,7 @@
                 collapseList: []
             }
         },
-        computed: {
-            ...mapGetters(['app_height'])
-        },
+    
     
         created() {
    
@@ -35,7 +33,7 @@
 </script>
 <style lang="less">
     .container {
-        height: 100vh;
+        height: 100%;
         display: flex;
         overflow: hidden;
         flex-direction: column;
