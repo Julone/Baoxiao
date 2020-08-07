@@ -7,7 +7,7 @@
                 <div class="gray-btn-group" @click="onDrop">
                     <span>{{cur_label('status') }}</span>
                     <span>{{cur_label('sortable') }}</span>
-                    <span>{{ getYwcj}}
+                    <span>{{ cur_label('publicType')}}
                         <van-icon name="arrow-down" /></span>
                 </div>
                 <van-popup v-model="showDrop" position="bottom">
@@ -29,15 +29,13 @@
                                 </van-radio-group>
                             </template>
                         </van-field>
-                        <van-field :border="false" name="radio" label="业务场景">
+                        <van-field :border="false" name="radio" label="对公对私">
 
                             <template #input>
-                                <van-radio-group v-model="filterOptions.ywcj" direction="horizontal">
-                                    <van-radio style="padding:10px;" v-for="o in ywcjList" :key="o.id" :name="o.id">
-                                        {{o.mc}}
+                                <van-radio-group v-model="filterOptions.publicType" direction="horizontal">
+                                    <van-radio style="padding:10px;" v-for="o in filterOptionsLabel.publicType" :key="o.id" :name="o.id">
+                                        {{o.label}}
                                     </van-radio>
-                                    <van-radio :name="0">全部</van-radio>
-
                                 </van-radio-group>
                             </template>
                         </van-field>
@@ -62,8 +60,8 @@
             <a class="blue-text" @click="checkMode = false">取消</a>
         </nav>
         <van-pull-refresh v-model="refreshing" success-text="刷新成功" @refresh="onRefresh">
-            <main>
-                <van-collapse v-model="activeNames">
+            <main style="min-height:80vh">
+                <van-collapse v-model="activeNames" v-if="accountList.length > 0">
                     <van-collapse-item v-show="acc.children.length" v-for="(acc,index) in accountList" :key="index"
                         :name="index" :title="acc.title">
                         <van-swipe-cell v-for="(el,i) in acc.children" :key="i" :disabled="checkMode">
@@ -93,6 +91,8 @@
                         </van-swipe-cell>
                     </van-collapse-item>
                 </van-collapse>
+                <van-empty v-if="accountList.length == 0" description="暂无消费记录">
+                </van-empty>
             </main>
         </van-pull-refresh>
         <!-- 底部保存 -->
@@ -145,7 +145,7 @@
                 filterOptions: {
                     status: 0,
                     sortable: 1,
-                    ywcj: 0
+                    publicType: 0
                 },
                 filterOptionsLabel: {
                     status: [{
@@ -171,6 +171,19 @@
                             id: 2,
                             label: '费用类型'
                         },
+                    ],
+                    publicType: [
+                        {
+                            id: 0,
+                            label: '全部'
+                        },
+                        {
+                            id: 1,
+                            label: '对公'
+                        }, {
+                            id: 2,
+                            label: '对私'
+                        }
                     ]
                 },
                 accountList: [],
@@ -228,7 +241,7 @@
                 } else {
                     if (bool) {
                         this.$router.push({
-                            name: 'bill_edit',
+                            path: '/bill/edit',
                             query: {
                                 dj_id: el.id,
                                 from_route: this.$route.name
@@ -271,11 +284,11 @@
             getData() {
                 var status = this.filterOptions.status;
                 var group = this.filterOptions.sortable;
-                var djlb = this.filterOptions.ywcj
+                var zhbj = this.filterOptions.publicType
                 return account_get_danjuList({
                     status,
                     group,
-                    djlb
+                    zhbj
                 }).then(r => {
                     var data = r.data.reduce((t, ele) => {
                         ele.expenseType = ele.Fydlmc + " " + ele.Fylxmc;
@@ -297,15 +310,17 @@
             }
         },
         created() {
-            window.scrollTo(0,0)
             this.getData();
         },
         activated(){
+                 console.log(1);
+            this.getData();
             this.$nextTick(()=>{
                 if(this.$route.meta.savedPosition) {
                     window.scrollTo(0,this.$route.meta.savedPosition.y)
                 }
             });
+       
         }
     }
 </script>

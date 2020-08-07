@@ -1,6 +1,7 @@
 export default {
     path: '/bill/add',
     name: 'bill_add',
+    alias: ['/bill/edit'],
     component: () => import('@/views/Bill_Add/Bill_Add.vue'),
     children: [
         {

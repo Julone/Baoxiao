@@ -1,9 +1,11 @@
 <template>
   <div id="app">
     <!-- 顺序不能反 -->
-    <keep-alive> 
-      <router-view :key="freshToken" v-if="$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
-    </keep-alive>
+    <transition name="van-fade" mode="out-in">
+      <keep-alive> 
+        <router-view :key="freshToken" v-if="$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
+      </keep-alive>
+    </transition>
     <transition name="van-fade" mode="out-in">
       <router-view :key="freshToken" v-if="!$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
     </transition>

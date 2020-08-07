@@ -24,13 +24,13 @@ export function auth_get_user_info(apptoken) {
 
     })
 }
-export function bill_get_expense_wldw(khid = 2) {
+export function bill_get_expense_wldw() {
     return axios({
-        url: url + "/getWldw",
+        url: url + "/getWldwByKhid",
         method: "POST",
         params: {
             data: {
-                khid
+                khid: store.getters.activeAccount.khid
             }
         }
     })
@@ -67,6 +67,7 @@ export function bill_set_data(data) {
         "tzid": store.getters.activeAccount.khid,
         "khid": store.getters.activeAccount.khid,
         "zdr": store.getters.userinfo.cname,
+        "userid": store.getters.userinfo.id,
         "ny": data.ny,
         "rq": data.rq,
         "yhzh": "",
@@ -87,13 +88,13 @@ export function bill_set_data(data) {
             "zhmc": data.zhmc,
             "zhbj": data.zhbj,
         },
-        dgbs: data.dgbs
+        zhbj: data.dgbs
     }
     if (data.update_id) {
         formData.id = data.update_id;
     }
     return axios({
-        url: url + '/setDj',
+        url: url + '/setFy',
         method: 'POST',
         data: {
             data: formData
@@ -103,7 +104,7 @@ export function bill_set_data(data) {
 
 export function bill_del_danju(id) {
     return axios({
-        url: url + '/delDjgById',
+        url: url + '/delFygById',
         method: 'POST',
         data: {
             data: {
@@ -129,7 +130,8 @@ export function bill_get_hexiao({zhmc,wdpje}) {
 
 export function bill_get_department({
     page,
-    limit
+    limit,
+    name =''
 }) {
     return axios({
         url: url + '/getDeptListByTzidAndRq',
@@ -139,7 +141,8 @@ export function bill_get_department({
                 tzid: store.getters.activeAccount.khid,
                 rq: "202007",
                 page,
-                limit
+                limit,
+                name
             }
         }
     })
@@ -148,17 +151,17 @@ export function bill_get_department({
 export function account_get_danjuList({
     status,
     group,
-    djlb
+    zhbj
 }) {
     return axios({
-        url: url + '/getDjList',
+        url: url + '/getFyList',
         method: 'POST',
         params: {
             data: {
-                "username": store.getters.userinfo.cname,
-                "status": status,
-                "group": group,
-                "djlb": djlb
+                userid: store.getters.userinfo.id,
+                status: status,
+                group: group,
+                zhbj: zhbj
             }
         }
     })
@@ -168,7 +171,7 @@ export function bill_add_get_weidaopiao_money({
     zhmc
 }) {
     return axiosSilent({
-        url: url + '/getWdpjeByTzidAndZhmc',
+        url: url + '/getWdpje',
         method: 'POST',
         params: {
             data: {
@@ -180,7 +183,7 @@ export function bill_add_get_weidaopiao_money({
 }
 export function bill_edit_get_danjuInfo(id) {
     return axios({
-        url: url + '/getDjMsgById',
+        url: url + '/getFyMsgById',
         method: 'POST',
         params: {
             data: {

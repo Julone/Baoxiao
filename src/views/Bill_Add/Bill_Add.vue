@@ -1,7 +1,7 @@
 <template>
     <div class="bill_add_container">
         <div class="bill_add_wrapper" ref="mainContent">
-            <van-nav-bar title="新建费用" fixed placeholder style="height:12vw" left-text="返回" left-arrow
+            <van-nav-bar :title="edit_mode?'单据明细':'新建费用'" fixed placeholder style="height:12vw" left-text="返回" left-arrow
                 @click-left="$store.dispatch('appGoback')">
                 <template #right>
                     <accountPicker></accountPicker>
@@ -85,7 +85,7 @@
                             </template>
                         </van-field>
                         <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
                                 @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
@@ -120,7 +120,7 @@
                             </template>
                         </van-field>
                         <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
                                 @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
@@ -155,7 +155,7 @@
                             </template>
                         </van-field>
                         <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.khyh" label="往来单位" clickable
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
                                 @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
@@ -225,15 +225,28 @@
                     </van-cell-group>
                 </template>
                 <!-- 底部保存 -->
-                <div class="van-tabbar--fixed bottom_saved_buttons">
+                <div class="van-tabbar--fixed bottom_saved_buttons" v-if="!edit_mode">
                     <van-row>
                         <van-col span="12">
-                            <van-button @click="onSaveAgain" native-type="button" type="default" borderless
+                            <van-button @click="onAddSaveAgain" native-type="button" type="default" borderless
                                 style="background:rgb(247,247,247)" block>再记一笔</van-button>
                         </van-col>
                         <van-col span="1"></van-col>
                         <van-col span="11">
-                            <van-button @click="onSave" native-type="button" type="info" borderless block>保存
+                            <van-button @click="onAddSave" native-type="button" type="info" borderless block>保存
+                            </van-button>
+                        </van-col>
+                    </van-row>
+                </div>
+                 <div class="van-tabbar--fixed bottom_saved_buttons" v-if="edit_mode">
+                    <van-row>
+                        <van-col span="7">
+                            <van-button @click="onEditRemove" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block>移除</van-button>
+                        </van-col>
+                        <van-col span="1"></van-col>
+                        <van-col span="16">
+                            <van-button @click="onEditSave" native-type="button" type="info" borderless block>保存
                             </van-button>
                         </van-col>
                     </van-row>
@@ -256,7 +269,8 @@
     import {
         bill_get_ywcj,
         bill_set_data,
-        bill_add_get_weidaopiao_money
+        bill_add_get_weidaopiao_money,
+        bill_edit_get_danjuInfo
     } from 'api'
     import {
         dateFormat
@@ -287,7 +301,6 @@
                     wdpje:0
                 },
                 saveId: [],
-
             }
         },
         watch: {
@@ -313,7 +326,10 @@
             ...mapGetters({
                 ywcjColumns: 'ywcjList',
                 regRules: 'regRules'
-            })
+            }),
+            edit_mode(){
+                return this.$route.query.hasOwnProperty('dj_id')
+            }
         },
         created() {
             if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
@@ -325,6 +341,27 @@
             // Promise.all([this.getDataYwcj()]).then(r => {
             // this.initOK = true;
             // })
+            if(this.$route.query.dj_id) {
+                bill_edit_get_danjuInfo(this.$route.query.dj_id).then(r=>{
+                    console.log(r);
+                    var data = r.data || {};
+                    this.form = {
+                        bcdp: Number(data.je).toFixed(2),
+                        dprq: new Date(data.rq),
+                        ft_info: data.ft_info.map(el=>{
+                            el.cdje = Number(el.je).toFixed(2);
+                            return el
+                        }),
+                        liuyan: data.bz || "",
+                        wanlai_danwei: data.wanlai_danwei || {},
+                        xflx: data.xflx,
+                        ywcj: data.ywcj,
+                        wdpje: 0,
+                        duisi: data.zhbj == 2
+                    };
+                    this.getHexiaoFeiyong();
+                }).catch(e=>e)
+            }
             this.form.ywcj = this.ywcjColumns[0]
             this.fp_list = [{
                 url: 'https://img.yzcdn.cn/vant/ipad.jpeg',
@@ -361,7 +398,7 @@
                     this.$toast.fail(e.message);
                 })
             },
-            onSave() {
+            onAddSave() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(r => {
                         if (this.$route.query.from) {
@@ -371,9 +408,22 @@
                                     fyid: this.saveId.join('_')
                                 }
                             });
+                        }else{
+                             this.$router.push({
+                                name: 'account',
+                                query: {
+                                    _: +new Date()
+                                }
+                            })
                         }
                     })
                 })
+            },
+            onEditRemove(){
+
+            },
+            onEditSave(){
+
             },
             openFentang() {
                 return this.$refs.form.validate('xfje').then(r => {
@@ -385,7 +435,7 @@
                     this.$toast.fail(e.message);
                 })
             },
-            async onSaveAgain() {
+            async onAddSaveAgain() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(async r => {
                         this.form = Object.assign(this.form, {
@@ -411,12 +461,13 @@
                 var zhmc = this.form.wanlai_danwei.zhmc;
                 var je = this.form.bcdp;
                 var zhbj = '0';
-                var bz = this.form.beizu;
+                var bz = this.form.liuyan;
                 var fydlmc = this.form.xflx.fydlmc;
                 var fylxmc = this.form.xflx.fylxmc;
                 var dgbs = this.form.duisi? 2 : 1;
+                var ft_info = this.form.ft_info;
                 return new Promise((res, rej) => {
-                    bill_set_data({
+                   return bill_set_data({
                         djlx,
                         djlb,
                         rq,
@@ -427,7 +478,9 @@
                         fydlmc,
                         fylxmc,
                         zhmc,
-                        dgbs
+                        dgbs,
+                        ny,
+                        ft_info
                     }).then(r => {
                         console.log(r);
                         if (r.errcode == 0) {
@@ -435,7 +488,7 @@
                             this.$toast.success('保存成功!');
                             res(true);
                         } else {
-                            this.$toast.fail('保存成功!');
+                            this.$toast.fail('保存失败!');
                             rej(false)
                         }
                     })
@@ -447,6 +500,7 @@
                 this.$store.dispatch('appGoback');
             },
             chooseWldw(val) {
+                console.log(val);
                 this.form.wanlai_danwei = val;
                 this.$store.dispatch('appGoback');
                 this.getHexiaoFeiyong();

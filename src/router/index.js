@@ -6,12 +6,11 @@ import account from './module/account'
 import shenpi from './module/shenpi'
 import bill_add from './module/bill_add'
 import bill_get from './module/bill_get'
-import bill_edit from './module/bill_edit';
 import wode from './module/wode';
 import others from './module/others'
 
 Vue.use(VueRouter);
-const routes = [ home, account, shenpi, wode, bill_add, bill_get,bill_edit,...others ];
+const routes = [ home, account, shenpi, wode, bill_add, bill_get,...others ];
 const originalPush = VueRouter.prototype.push
 VueRouter.prototype.push = function push(location) {
   return originalPush.call(this, location).catch(err => err)
