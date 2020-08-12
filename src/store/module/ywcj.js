@@ -13,24 +13,20 @@ export default {
     },
     actions:{
         ywcj_get_ywcl_list({state,commit, dispatch}, val){
-            if(validatenull(state.ywcjList)){
-                return bill_get_ywcj().then(r=>{
-                    if(r.errcode == 0) {
-                        commit('SET_YWCJ_LIST',r.data );
-                        return true;
-                    }else {
-                        return false;
-                    }
-                }).catch(e => {
+            return bill_get_ywcj().then(r=>{
+                if(r.errcode == 0) {
+                    commit('SET_YWCJ_LIST',r.data );
+                    return true;
+                }else {
                     return false;
-                })
-            }else{
-                return Promise.resolve(true)
-            }
+                }
+            }).catch(e => {
+                return false;
+            })
         }
     },
     getters: {
-        ywcjList: state => state.ywcjList || [],
+        ywcjList: state => state.ywcjList.filter(el=> el.id != 7190) || [],
 
     }
 }

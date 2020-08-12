@@ -1,7 +1,7 @@
 <template>
     <div class="bill_add_container">
         <div class="bill_add_wrapper" ref="mainContent">
-            <van-nav-bar :title="edit_mode?'单据明细':'新建费用'" fixed placeholder style="height:12vw" left-text="返回" left-arrow
+            <van-nav-bar :title="edit_mode?'费用明细':'新建费用'" fixed placeholder style="height:12vw" left-text="返回" left-arrow
                 @click-left="$store.dispatch('appGoback')">
                 <template #right>
                     <accountPicker></accountPicker>
@@ -9,11 +9,11 @@
             </van-nav-bar>
             <!-- expense_type -->
             <van-form ref="form" @submit="onSubmit" novalidate>
-                <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx" class="xflx"
+                <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx" class="xflx marginBottom"
                     @click="go2sub({name: 'bill_add_expense_type'})" required :is-link="false" placeholder="请选择消费类型"
                     left-icon="gold-coin-o" :rules="[{ required: true, message: '请选择消费类型',trigger:'onChange' }]">
                 </van-field>
-                <div class="switch-cell marginTop">
+                <div class="switch-cell marginTop" v-if="form.xflx.fylxmc">
                     <div class="left">
                         <span v-if="form.duisi == true">个人费用</span>
                         <span v-if="form.duisi == false">对公业务</span>
@@ -48,7 +48,7 @@
                 </template>
                 <!-- 对公全部到票业务 -->
                 <template v-if="!form.duisi">
-                    <van-cell-group class="">
+                    <van-cell-group>
                     <van-field v-model="form.ywcj.mc" clickable readonly name="ywcj" @click="ywcjStatus = true" required
                         is-link label="业务场景">
                     </van-field>
@@ -58,7 +58,7 @@
                         </van-picker>
                     </van-popup>
                 </van-cell-group>
-                    <template v-if="form.ywcj.id == 7187">
+                    <template v-if="form.ywcj.id == 7184">
                         <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
                             name="xfje">
                             <template #input>
@@ -93,7 +93,7 @@
                         </van-cell-group>
                     </template>
                     <!-- 对公未到票业务 -->
-                    <template v-if="form.ywcj.id == 7188">
+                    <template v-if="form.ywcj.id == 7185">
                         <van-field v-model="form.bcdp" label="未到票" clickable required :rules="regRules.money"
                             name="xfje">
                             <template #input>
@@ -127,8 +127,8 @@
                             </van-field>
                         </van-cell-group>
                     </template>
-                    <!-- 对公全部到票业务 -->
-                    <template v-if="form.ywcj.id == 7189">
+                    <!-- 对公到票核销业务 -->
+                    <template v-if="form.ywcj.id == 7186">
                         <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
                             name="xfje">
                             <template #input>
@@ -161,12 +161,31 @@
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
                             </van-field>
                         </van-cell-group>
-                        <van-cell-group border class="marginTop cell-group">
+                        <van-cell-group border class="marginTop cell-group marginBottom">
                             <div class="title">核销历史费用</div>
-                            <div class="content">
-                                <van-button @click="go2sub({name: 'bill_add_hexiao'})" native-type="button" block
+                            <div class="content" v-if="form.wanlai_danwei.zhmc">
+                                {{wdp_list}}
+                                <van-button @click="open_hexiao()" native-type="button" block
                                     borderless type="info" plain>选取核销历史费用</van-button>
-                                <div align="center" style="padding-bottom:20px;font-size:80%">当前往来单位下剩余: ￥{{form.wdpje}}未到账</div>
+                                <div align="center" style="padding-bottom:20px;font-size:80%">当前往来单位下剩余: ￥{{form.wdpje}} 未到账</div>
+                                <div v-if="form.wdp_list.length > 0">
+                                    <van-divider marginless></van-divider>
+                                    <van-swipe-cell  v-for="(el,si) in form.wdp_list" :key="el.id">
+                                        <van-cell class="avg_cell" :title="el.fylxmc" :label="el.fydlmc" >
+                                            ￥{{el.je | money}}
+                                        </van-cell>
+                                        <template #right>
+                                            <van-button @click="form.wdp_list.splice(si,1)" h100 square text="删除" type="danger" class="delete-button" />
+                                        </template>
+                                    </van-swipe-cell>
+                                </div>
+                            </div>
+                            <div class="content" v-else>
+                                <div class="hexiao-tip">
+                                    <van-notice-bar color="#1989fa" background="transparent" left-icon="info-o" >      
+                                        请先选择到票金额和往来单位!
+                                    </van-notice-bar>
+                                </div>
                             </div>
                         </van-cell-group>
                     </template>
@@ -177,30 +196,41 @@
                         :rules="[{ pattern: /^[\s\S]{0,300}$/, message: '留言太长',trigger:'onBlur' }]">
                     </van-field>
                 </van-cell-group>
-                <template v-if="form.ywcj.id != 7188">
+                <template v-if="form.ywcj.id != 7185">
                     <!-- 发票 -->
                     <van-cell-group border class="marginTop cell-group">
                         <div class="title">发票</div>
                         <div class="content">
-                            <van-button native-type="button" block borderless type="info" plain>上传发票</van-button>
-                            <van-swipe-cell class="fapiao_list" v-for="el in fp_list" :key="el.id">
+                            <van-uploader :after-read="afterRead" >
+                                <van-button native-type="button" bgless style="width:100%" block borderless type="info" plain>上传发票</van-button>
+                            </van-uploader>
+                            
+                            <van-swipe-cell class="fapiao_list" v-for="(el,index) in fp_info" :key="el.id">
                                 <van-cell clickable class="fapiao">
                                     <template #title>
                                         <div class="fapiao-title">
                                             <div class="left">
-                                                <img :src="el.url" width="40" height="40" alt="">
+                                                <img :src="el.imgurl" @click="onPreviewFapiao(el.imgurl)" width="40" height="40" alt="">
                                             </div>
                                             <div class="right">
-                                                <span class="sort">{{el.sort}}</span>
-                                                <span class="date">{{el.date}}</span>
+                                                <span class="fp-title">{{el.title}}</span>
+                                                <span class="date">{{el.left_title1}}</span>
+                                                <span class="seller">{{el.left_title2}}</span>
                                             </div>
                                         </div>
                                     </template>
-                                    <span class="money"><small>￥</small>{{el.money}}</span>
+                                    <div class="money">
+                                        <div class="total">
+                                            {{el.right_title1}}
+                                        </div>
+                                        <div class="shui">
+                                            {{el.right_title2}}
+                                        </div>
+                                    </div>
                                 </van-cell>
                                 <template #right>
                                     <div class="right-swipe-item">
-                                        <van-button style="height:100%"  type="danger" icon="cross" class="delete-button" />
+                                        <van-button style="height:100%" @click="fp_info.splice(index,1)" type="danger" icon="cross" class="delete-button" />
                                     </div>
                                 </template>
                             </van-swipe-cell>
@@ -208,7 +238,7 @@
                     </van-cell-group>
                     <!-- 分摊 -->
                     <!-- {{form.ft_info}} -->
-                    <van-cell-group border class="marginTop cell-group">
+                    <van-cell-group border class="marginTop cell-group" v-if="form.ywcj.id != 7188">
                         <div class="title">分摊信息</div>
                         <div class="content" @click="openFentang">
                             <van-button v-if="!form.ft_info.length" native-type="button" block borderless type="info"
@@ -253,14 +283,9 @@
                 </div>
             </van-form>
         </div>
-        <!-- <transition name="van-slide-right">
-            <div class="erji-view" v-if="isErjiRoute" >
-                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"></router-view>
-            </div>
-        </transition> -->
         <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
             <transition name="van-fade">
-                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"></router-view>
+                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw" @chooseHxfy="chooseHxfy" ></router-view>
             </transition>
         </van-popup>
     </div>
@@ -270,7 +295,9 @@
         bill_get_ywcj,
         bill_set_data,
         bill_add_get_weidaopiao_money,
-        bill_edit_get_danjuInfo
+        bill_edit_get_danjuInfo,
+        parse_info_from_base64,
+        bill_del_danju
     } from 'api'
     import {
         dateFormat
@@ -278,6 +305,9 @@
     import {
         mapGetters
     } from 'vuex'
+    import pictureCompress from 'picture-compressor-plus';
+    import { ImagePreview } from 'vant';
+    import fapiaoHandler from './../../utils/fapiao';
     export default {
         data() {
             return {
@@ -288,7 +318,7 @@
                 minDate: new Date(2015, 0, 1),
                 maxDate: new Date(),
                 initOK: false,
-                fp_list: [],
+                fp_info: [],
                 form: {
                     xflx: {},
                     duisi: true,
@@ -298,9 +328,12 @@
                     wanlai_danwei: {},
                     liuyan: '',
                     ft_info: [],
-                    wdpje:0
+                    wdpje:0,
+                    wdp_list: [],
+                    fp_info:[]
                 },
                 saveId: [],
+                update_id: this.$route.query.dj_id || null
             }
         },
         watch: {
@@ -328,7 +361,7 @@
                 regRules: 'regRules'
             }),
             edit_mode(){
-                return this.$route.query.hasOwnProperty('dj_id')
+                return this.$route.query.hasOwnProperty('dj_id') || false
             }
         },
         created() {
@@ -338,11 +371,9 @@
                     name: 'bill_add'
                 })
             }
-            // Promise.all([this.getDataYwcj()]).then(r => {
-            // this.initOK = true;
-            // })
-            if(this.$route.query.dj_id) {
-                bill_edit_get_danjuInfo(this.$route.query.dj_id).then(r=>{
+            if(this.update_id) {
+                var loading = this.$toast.loading({message:'加载中...',duration:0})
+                bill_edit_get_danjuInfo(this.update_id).then(r=>{
                     console.log(r);
                     var data = r.data || {};
                     this.form = {
@@ -357,21 +388,75 @@
                         xflx: data.xflx,
                         ywcj: data.ywcj,
                         wdpje: 0,
-                        duisi: data.zhbj == 2
+                        duisi: data.zhbj == 2,
+                        wdp_list: data.wdp_list
                     };
+                    this.fp_info = data.fp_info.map(el => {
+                            var obj = JSON.parse(el.imgjson_info);
+                            for(var o in obj){
+                                el[o] = obj[o]
+                            }
+                            el.imgurl = el.imgurl;
+                            el.id = el.id;
+                          return el
+                    });
                     this.getHexiaoFeiyong();
-                }).catch(e=>e)
+                }).catch(e=>e).finally(()=>{
+                    loading.close();
+                })
             }
-            this.form.ywcj = this.ywcjColumns[0]
-            this.fp_list = [{
-                url: 'https://img.yzcdn.cn/vant/ipad.jpeg',
-                sort: '其他',
-                date: '2020-07-12',
-                money: '2300.00'
-            }]
-
+            this.form.ywcj = this.ywcjColumns[0];
         },
         methods: {
+            open_hexiao(){
+                this.$refs.form.validate('xfje').then(r=>{
+                    this.go2sub({name: 'bill_add_hexiao'})
+                })
+            },
+            onPreviewFapiao(el){
+                ImagePreview([el]);
+            },
+            afterRead(object){
+                var l = this.$toast.loading({
+                    message:'正在识别中...',
+                    duration:0
+                });
+                pictureCompress({
+                    img: object.content,
+                    width: 1500,
+                    height: 1500,
+                    fit: 'scale'
+                }).then(res => {
+                    parse_info_from_base64(res.img.replace(/^data:image\/\w+;base64,/, "")).then(r=>{
+                        try{
+                            var json = JSON.parse(r.data.data);
+                            var imgurl = r.data.imgPath;
+                            var ret = json.data.ret[0];
+                            var obj = fapiaoHandler(ret);
+                            if( Number(this.form.bcdp) == 0 && !this.edit_mode){
+                                this.form.bcdp = obj.invoice_money;
+                            }
+                            try{
+                                this.form.dprq = new Date(obj.invoice_date.replace(/(年|月|日)/g,'/').slice(0,-1))
+                            }catch(e){
+                                this.form.dprq= new Date();
+                            }
+                            console.log(ret);
+                            obj.imgurl = imgurl.replace('../','http://webt.lilang.com:9001/');
+                            obj.imgjson_row = JSON.stringify(ret);
+                            obj.imgjson_info = JSON.stringify(obj);
+                            this.fp_info.push(obj);
+                            l.close();
+                            console.log(json)
+                        }catch(e){
+                            console.error(e);
+                        }
+                      
+                    }).catch(e=>{
+                        l.close();
+                    })
+                });
+            },
             getHexiaoFeiyong(){
                  if(this.form.ywcj.id == 7189) {
                     var zhmc = this.form.wanlai_danwei.zhmc;
@@ -410,20 +495,38 @@
                             });
                         }else{
                              this.$router.push({
-                                name: 'account',
-                                query: {
-                                    _: +new Date()
-                                }
+                                name: 'account'
                             })
                         }
                     })
                 })
             },
             onEditRemove(){
-
+                     this.$dialog.confirm({
+                        title: '删除',
+                        message: '是否删除?',
+                    })
+                    .then(() => {
+                        return bill_del_danju(this.update_id).then(r => {
+                            this.$toast.success('删除成功');
+                             this.$router.push({
+                            name: 'account'
+                        })
+                        }).catch(e => e).finally(() => {
+                           
+                        })
+                    })
+                    .catch(() => {
+                    });
             },
             onEditSave(){
-
+                this.$refs.form.validate().then(r => {
+                    this.onSubmit(this.update_id).then(async r => {
+                        this.$router.push({
+                            name: 'account'
+                        })
+                    })
+                })
             },
             openFentang() {
                 return this.$refs.form.validate('xfje').then(r => {
@@ -438,21 +541,11 @@
             async onAddSaveAgain() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(async r => {
-                        this.form = Object.assign(this.form, {
-                            xflx: {},
-                            bcdp: "",
-                            dprq: new Date(),
-                            liuyan: '',
-                            wanlai_danwei: {},
-                            ft_info: []
-                        })
-                        await this.$nextTick();
-                        this.$refs.form && this.$refs.form.resetValidation();
+                        this.$eventBus.$emit('refreshView')
                     })
                 })
-
             },
-            onSubmit() {
+            onSubmit(update_id) {
                 var djlx = this.form.ywcj.djlx;
                 var djlb = this.form.ywcj.id;
                 var ny = dateFormat(this.form.dprq, 'yyyyMM');
@@ -464,10 +557,12 @@
                 var bz = this.form.liuyan;
                 var fydlmc = this.form.xflx.fydlmc;
                 var fylxmc = this.form.xflx.fylxmc;
+                var fylxid = this.form.xflx.id;
                 var dgbs = this.form.duisi? 2 : 1;
                 var ft_info = this.form.ft_info;
-                return new Promise((res, rej) => {
-                   return bill_set_data({
+                var fp_info = this.fp_info;
+                var wdp_list = this.form.ywcj.id == 7189 ? this.form.wdp_list: []
+                var obj = {
                         djlx,
                         djlb,
                         rq,
@@ -477,11 +572,19 @@
                         bz,
                         fydlmc,
                         fylxmc,
+                        fylxid,
                         zhmc,
                         dgbs,
                         ny,
-                        ft_info
-                    }).then(r => {
+                        ft_info,
+                        wdp_list,
+                        fp_info
+                }
+                if(update_id) {
+                    obj.update_id = update_id
+                }
+                return new Promise((res, rej) => {
+                   return bill_set_data(obj).then(r => {
                         console.log(r);
                         if (r.errcode == 0) {
                             this.saveId.push(r.data.id);
@@ -504,6 +607,10 @@
                 this.form.wanlai_danwei = val;
                 this.$store.dispatch('appGoback');
                 this.getHexiaoFeiyong();
+            },
+            chooseHxfy(val){
+                this.form.wdp_list = val;
+                this.$store.dispatch('appGoback');
             },
             onYwcjConfirm(value) {
                 this.form.ywcj = value;
@@ -529,8 +636,6 @@
                 this.dprq_popup = this.form.dprq;
             }
         }
-
-
     }
 </script>
 <style lang="less">
@@ -633,11 +738,23 @@
 
                 .content {
                     // height: 60px;;
+                    .hexiao-tip{
+                        padding:10px 5px ;
+                        font-size:90%;
+                        text-align: center;
+                        .van-notice-bar{
+                            width: 220px;
+                            margin: 0 auto;
+                        }
+                    }
                 }
             }
-
-
-
+            .van-uploader{
+                width: 100%;;
+            }
+            .van-uploader__input-wrapper{
+                flex:1;
+            }
             .fapiao {
                 border-top: 2px solid #f4f5f7;
 
@@ -646,13 +763,13 @@
                 }
 
                 .van-cell__value {
-                    flex: 1;
-                    text-align: right;
+                     flex: none;
+                    width: 30%;
                 }
 
                 .fapiao-title {
                     .flex(@a: flex-start; @j: flex-start);
-                    height: 40px;
+                    height: auto;
                     overflow: hidden;
 
                     .left {
@@ -663,22 +780,30 @@
                     .right {
                         .flex(@d: column; @a: flex-start);
                         font-size: 10px;
-                        line-height: 18px;
+                        line-height: 13px;
                         margin-left: 10px;
                         ;
 
-                        .sort {
-                            font-size: 14px;
-                            ;
+                        .fp-title {
+                            font-size: 12px;
+                            
                         }
+                        
 
                     }
                 }
-
+    
                 .money {
-                    font-size: 20px;
-                    line-height: 40px;
-                    ;
+                    font-size: 10px;
+                    line-height: 15px;
+                    .total{
+                    font-size: 14px;;
+                    text-align: right;
+                    }
+                    .shui{
+                        color:gray;
+                        text-align: right;
+                    }
 
                 }
             }

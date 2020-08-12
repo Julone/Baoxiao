@@ -29,6 +29,19 @@ module.exports = {
     devServer: {
         port: 8080,
         proxy: {
+           
+            '^/ORCSystem': {
+              target: 'http://192.168.35.136:15003/',
+              changeOrigin: true,
+            },
+            '^/apicc': {
+                target: 'http://192.168.36.152:8080',
+                changeOrigin: true,
+                pathRewrite: {
+                    '^/apicc': ''
+                }
+            },
+
             '^/api': {
                 target: 'http://192.168.36.171:8080',
                 changeOrigin: true,

@@ -62,6 +62,12 @@ export const axiosByFormData = (params) => {
   }
   return axiosBase(Object.assign(params, config))
 }
+export const axiosJson = (params) => {
+  var config = {
+    data: params.data
+  }
+  return axiosBase(Object.assign(params, config))
+}
 export const axiosSilent = (config) => {
     var axiosInstance = Axios.create(axiosInitialConfig);
     axiosInstance.interceptors.response.use(res => {

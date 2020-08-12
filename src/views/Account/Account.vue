@@ -5,8 +5,8 @@
             <div class="left-item">
                 <a class="blue-text" @click="checkMode = true">选择</a>
                 <div class="gray-btn-group" @click="onDrop">
-                    <span>{{cur_label('status') }}</span>
-                    <span>{{cur_label('sortable') }}</span>
+                    <span>{{ cur_label('status') }}</span>
+                    <span>{{ cur_label('sortable') }}</span>
                     <span>{{ cur_label('publicType')}}
                         <van-icon name="arrow-down" /></span>
                 </div>
@@ -33,7 +33,8 @@
 
                             <template #input>
                                 <van-radio-group v-model="filterOptions.publicType" direction="horizontal">
-                                    <van-radio style="padding:10px;" v-for="o in filterOptionsLabel.publicType" :key="o.id" :name="o.id">
+                                    <van-radio style="padding:10px;" v-for="o in filterOptionsLabel.publicType"
+                                        :key="o.id" :name="o.id">
                                         {{o.label}}
                                     </van-radio>
                                 </van-radio-group>
@@ -65,25 +66,46 @@
                     <van-collapse-item v-show="acc.children.length" v-for="(acc,index) in accountList" :key="index"
                         :name="index" :title="acc.title">
                         <van-swipe-cell v-for="(el,i) in acc.children" :key="i" :disabled="checkMode">
-                            <div class="account-item" @click="onItemClick(el,acc)">
-                                <div class="left">
-                                    <van-checkbox class="checkbox" v-if="checkMode" v-model="el.checked"></van-checkbox>
-                                    <div class="icon">
-                                        <van-icon :name="el.icon"></van-icon>
+                            <div class="account-item-container" @click="onItemClick(el,acc, true)">
+                                <div class="account-item">
+                                    <div class="left">
+                                        <van-checkbox class="checkbox" v-if="checkMode" v-model="el.checked">
+                                        </van-checkbox>
+                                        <div class="icon">
+                                            <van-icon :name="el.icon"></van-icon>
+                                        </div>
+                                        <div class="title">
+                                            <div class="flex">
+                                                {{el.expenseType}}
+                                                <van-tag v-if="el.zhbj == 1" plain type="primary"
+                                                    style="zoom:.8;margin-left:5px">对公</van-tag>
+                                            </div>
+                                            <small style="color:#aaa">{{el.wanlai_danwei.zhmc}}</small>
+                                        </div>
                                     </div>
-                                    <div class="title">
-                                        <div>{{el.expenseType}}</div>
-                                        <small style="color:#aaa">{{el.zhmc}}</small>
+                                    <div class="right">
+                                        <div class="top"><small>¥</small>{{el.money}}</div>
+                                        <div class="bottom">消费时间 {{el.expenseTime }}</div>
                                     </div>
                                 </div>
-                                <div class="right">
-                                    <div class="top"><small>¥</small>{{el.money}}</div>
-                                    <div class="bottom">消费时间 {{el.expenseTime }}</div>
+                                <div class="duigong" v-if="el.zhbj == 1">
+                                    <div class="cell">
+                                        <van-icon name="points" color="#1989fa" />
+                                        {{el.ywcj.id == 7188? '未到票': '本期到票'}}:
+                                        <span><small>¥</small>{{el.money}}</span>
+                                    </div>
+                                    <div class="cell">
+                                        <van-icon name="calender-o" color="#1989fa" />
+                                        {{el.ywcj.id == 7188? '预计到票': '到票日期'}}:
+                                        <span>{{el.rq | date('yyyy-MM-dd')}}</span>
+                                    </div>
                                 </div>
                             </div>
                             <template #right>
-                                <van-button style="height:100%" square text="编辑" type="info" @click="onItemClick(el,acc, true)" />
-                                <van-button style="height:100%" square text="删除" type="danger" @click="onDelete(el.id)" />
+                                <van-button style="height:100%" square text="编辑" type="info"
+                                    @click="onItemClick(el,acc, true)" />
+                                <van-button style="height:100%" square text="删除" type="danger"
+                                    @click="onDelete(el.id)" />
                             </template>
                             <template #left>
                                 <van-button style="height:100%" square text="复制" type="primary" />
@@ -91,8 +113,14 @@
                         </van-swipe-cell>
                     </van-collapse-item>
                 </van-collapse>
-                <van-empty v-if="accountList.length == 0" description="暂无消费记录">
-                </van-empty>
+             
+                <div class="flex marginTop marginBottom" style="padding:10px 0;">
+                    <van-loading v-if="loading && !refreshing" type="spinner" />
+                    <div v-if="!loading && !refreshing">
+                        <van-empty v-if=" !error&&  accountList.length == 0" description="暂无消费记录" />
+                        <span class="van-empty__description" v-if="error" @click="getData">请求失败,点击重试</span>
+                    </div>
+                </div>
             </main>
         </van-pull-refresh>
         <!-- 底部保存 -->
@@ -119,7 +147,7 @@
                 <router-view></router-view>
             </div>
         </transition> -->
-         <!-- <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <!-- <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
                 <router-view></router-view>
             </transition>
@@ -141,6 +169,8 @@
         data() {
             return {
                 refreshing: false,
+                loading: false,
+                error: false,
                 showDrop: false,
                 filterOptions: {
                     status: 0,
@@ -172,8 +202,7 @@
                             label: '费用类型'
                         },
                     ],
-                    publicType: [
-                        {
+                    publicType: [{
                             id: 0,
                             label: '全部'
                         },
@@ -189,7 +218,8 @@
                 accountList: [],
                 activeNames: [],
                 checkMode: false,
-                isSelectAll: false
+                isSelectAll: false,
+
             }
         },
         watch: {
@@ -211,19 +241,28 @@
                 return this.ywcjList.find(el => el.id == this.filterOptions.ywcj).mc
             },
             isErjiRoute: {
-                get(){
+                get() {
                     return this.$route.name != 'account'
                 },
-                set(){}
+                set() {}
             },
         },
         methods: {
-            onDelete(id){
-                bill_del_danju(id).then(r=>{
-                    this.$toast.success('删除成功');
-                }).catch(e=>e).finally(()=>{
-                    this.getData();
-                })
+            onDelete(id) {
+                this.$dialog.confirm({
+                        title: '删除',
+                        message: '是否删除?',
+                    })
+                    .then(() => {
+                        return bill_del_danju(id).then(r => {
+                            this.$toast.success('删除成功');
+                        }).catch(e => e).finally(() => {
+                            this.getData();
+                        })
+                    })
+                    .catch(() => {
+                        // on cancel
+                    });
             },
             onRefresh() {
                 this.checkMode = false;
@@ -284,18 +323,20 @@
             getData() {
                 var status = this.filterOptions.status;
                 var group = this.filterOptions.sortable;
-                var zhbj = this.filterOptions.publicType
+                var zhbj = this.filterOptions.publicType;
+                this.loading = true
                 return account_get_danjuList({
                     status,
                     group,
                     zhbj
                 }).then(r => {
                     var data = r.data.reduce((t, ele) => {
-                        ele.expenseType = ele.Fydlmc + " " + ele.Fylxmc;
+                        console.log(ele)
+                        ele.expenseType = ele.xflx.fylxmc;
                         ele.money = Number(ele.je).toFixed(2);
                         ele.checked = false;
                         ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
-                        ele.icon = 'balance-o'
+                        ele.icon = 'balance-o';
                         var key = dateFormat(ele.rq, 'yyyy-MM-dd');
                         t[key] ? t[key].children.push(ele) : (t[key] = {
                             title: key,
@@ -305,22 +346,25 @@
                     }, {});
                     this.accountList = Object.values(data);
                     this.activeNames = this.accountList.map((el, i) => i);
+                    console.log(this.accountList)
                     return r;
-                }).catch(e => e)
+                }).catch(e => {
+                    this.error = true;
+                }).finally(() => {
+                    this.loading = false;
+                })
             }
         },
         created() {
             this.getData();
         },
-        activated(){
-                 console.log(1);
+        activated() {
             this.getData();
-            this.$nextTick(()=>{
-                if(this.$route.meta.savedPosition) {
-                    window.scrollTo(0,this.$route.meta.savedPosition.y)
+            this.$nextTick(() => {
+                if (this.$route.meta.savedPosition) {
+                    window.scrollTo(0, this.$route.meta.savedPosition.y)
                 }
             });
-       
         }
     }
 </script>
@@ -384,12 +428,44 @@
                 padding: 0;
             }
 
+            .account-item-container {
+                border-bottom: 1px solid rgba(128, 128, 128, 0.143);
+                overflow: hidden;
+
+                .duigong {
+                    width: 90%;
+                    padding: 2.66667vw;
+                    .flex(@j: space-between; );
+                    box-sizing: border-box;
+                    float: right;
+                    font-size: .8em;
+                    border-top: 1px solid rgba(128, 128, 128, 0.143);
+                    padding-left: 20px;
+
+                    .cell {
+                        .flex();
+
+                        &>i {
+                            margin-right: 4px;
+                            ;
+                        }
+
+                        &>span {
+                            margin-left: 5px;
+                            ;
+                        }
+
+                        // letter-spacing: 1px;
+                    }
+                }
+
+            }
+
             .account-item {
                 padding: 5px 10px;
-                ;
                 .flex(@j: space-between);
                 color: black;
-                border-bottom: 1px solid rgba(128, 128, 128, 0.143);
+                border-bottom: none;
 
                 .left {
                     .checkbox {

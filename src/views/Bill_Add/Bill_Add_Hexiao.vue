@@ -3,12 +3,22 @@
         <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
             <div style="width: 100%">
-                <van-cell v-for="el in list" :key="el.id" clickable is-link :title="el.zhmc"
-                    @click="$emit('chooseWldw',el)" :label="el.khyh" />
-            <van-empty v-if="list.length == 0">暂无数据</van-empty>
-
+                <van-cell v-for="el in list" :key="el.id" clickable :is-link="false" :title="el.fylxmc"
+                    @click="chooseItem(el)" :label="el.khyh" >
+                    <van-icon color="red" v-if=" el.checked" name="success" />
+                    ￥{{el.je | moneyFormat }}
+                </van-cell>
+            <van-empty v-if="list.length == 0">暂无核销费用</van-empty>
             </div>
 
+        </div>
+        <div class="van-tabbar--fixed bottom_saved_buttons">
+            <van-row>
+                <van-col span="24">
+                    <van-button @click="onSave" native-type="button" type="info" borderless block>保存
+                    </van-button>
+                </van-col>
+            </van-row>
         </div>
     </div>
 </template>
@@ -24,29 +34,38 @@
         data() {
             return {
                 list: [],
-                wdpje: this.formdata.wdpje,
-                zhmc: this.formdata.wanlai_danwei.zhmc
+                wdpje: this.formdata.bcdp,
+                zhmc: this.formdata.wanlai_danwei.zhmc,
+                wdp_list: []
             }
         },
         props: ['formdata'],
-
         computed: {
-            curTypeList() {
-                console.log(this.typeList);
-                return this.typeList[this.activeKey]
-            },
             ...mapGetters(['app_height'])
         },
+        methods: {
+            onSave(){
+                this.$emit('chooseHxfy',this.list.filter(el=> el.checked))
+            },
+            chooseItem(el){
+                el.checked = !el.checked;
 
+            }
+        },
         created() {
+            var wdp_list = [...this.formdata.wdp_list];
             bill_get_hexiao({wdpje: this.wdpje,zhmc:this.zhmc}).then(r => {
                 if (r.errcode == 0 && r.data.length) {
-                    this.list = r.data.map(el => el)
-
+                    this.list = r.data.map(el => {
+                        el.checked = wdp_list.find(w => w.id == el.id)? true:false
+                        return el;
+                    })
                 }
             })
+            
             console.log(this.$route);
         },
+        
     }
 </script>
 <style lang="less">

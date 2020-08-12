@@ -21,8 +21,11 @@ export default new Vuex.Store({
       router.go(-1);
     },
     appStart({dispatch}){
-      dispatch('ywcj_get_ywcl_list');
-      dispatch('auth_getUserInfo')
+      dispatch('auth_getUserInfo').then(r=>{
+        dispatch('ywcj_get_ywcl_list');
+      }).catch( e=> {
+        this.$toast('用户鉴权失败!')
+      })
     }
   },
   getters: {

@@ -1,10 +1,10 @@
 <template>
     <div class="container">
-        <van-nav-bar title="添加收款账户" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
+        <van-nav-bar :title="c_title" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
-            <van-form ref="form" w100 @submit="onSubmit">
+            <van-form ref="form" w100 @submit="onSubmit" :show-error="false">
                 <van-cell-group class="marginBottom">
-                    <van-field v-model="form.zhlx" clickable readonly name="ywcj" @click="popupShow = true" required
+                    <van-field v-model="zhlx" clickable readonly name="ywcj" @click="popupShow = true" required
                         is-link label="帐户类型">
                     </van-field>
                     <van-popup v-model="popupShow" position="bottom">
@@ -13,22 +13,55 @@
                         </van-picker>
                     </van-popup>
                 </van-cell-group>
-                <van-cell-group v-if="form.zhlx == '银行账户'">
-                    <van-field label="户名" v-model="form.hm" placeholder="请输入户名" required name="hm" :rules="[{ required: true, message: '此为必填项' }]"></van-field>
-                    <van-field label="银行卡号" v-model="form.zh" placeholder="请输入帐号" required name="'zh" :rules="[{ required: true, message: '此为必填项' }]"></van-field>
+                {{form}}
+                <van-cell-group v-if="zhlx == '银行账户'">
+                    <van-field label="户名" v-model="form.hm" placeholder="请输入户名" required name="hm" :rules="[{ required: true, message: '请输入户名' }]"></van-field>
+                    <van-field label="银行卡号" v-model="form.yhkh" placeholder="请输入帐号" required name="'zh" :rules="[{ required: true, message: '请输入帐号' }]"></van-field>
                 </van-cell-group>
-                <van-cell-group v-if="form.zhlx == '支付宝'">
-                    <van-field label="户名" v-model="form.hm" placeholder="请输入户名" required name="hm" :rules="[{ required: true, message: '此为必填项' }]"></van-field>
-                    <van-field label="账号" v-model="form.zh" placeholder="请输入帐号" required name="'zh" :rules="[{ required: true, message: '此为必填项' }]"></van-field>
+                  <van-cell-group class="marginTop" v-if="zhlx == '银行账户'">
+                    <van-field label="开户银行" v-model="form.khyh.yhname" is-link  required 
+                    name="khyh" :rules="[{ required: true, message: '请选择开户银行', trigger: 'onChange' }]"
+                    readonly placeholder="请选择开户银行" 
+                    @click="go2SubPage('khyh')"
+                    >
+
+                    </van-field>
+                    <van-field label="开户省市" v-model="form.khss.shi" is-link  required 
+                    name="khss" :rules="[{ required: true, message: '请选择开户省市',trigger: 'onChange' }]"
+                    readonly placeholder="请选择开户省市" 
+                    @click="go2SubPage('khss')"
+                    >
+
+                    </van-field>
+                    <van-field label="分支行" v-model="form.fzh.khyh" is-link  required 
+                    name="fzh" :rules="[{ required: true, message: '请选择分支行',trigger: 'onChange' }]"
+                    readonly placeholder="请选择分支行"
+                    @click="go2SubPage('fzh')"
+                    >
+
+                    </van-field>
                 </van-cell-group>
-                <van-cell-group v-if="form.zhlx == '现金'">
-                    <van-field label="现金名称" v-model="form.hm" placeholder="请输入现金名称" :rules="[{ required: true, message: '此为必填项' }]" required></van-field>
-                </van-cell-group>
+               
                 <!-- 底部保存 -->
 
                 <div class="van-tabbar--fixed bottom_saved_buttons">
-                    <van-row>
+                    <van-row v-if="!is_editmode">
                         <van-col span="24">
+                            <van-button type="info" borderless block>
+                                保存
+                            </van-button>
+                        </van-col>
+                    </van-row>
+                     <van-row v-if="is_editmode">
+                        <van-col span="8">
+                            <van-button type="" native-type="button"
+                            @click="removeItem()"
+                             borderless block>
+                                移除
+                            </van-button>
+                        </van-col>
+                        <van-col span="1" ></van-col>
+                        <van-col span="15">
                             <van-button type="info" borderless block>
                                 保存
                             </van-button>
@@ -37,13 +70,25 @@
                 </div>
             </van-form>
         </div>
+        <van-popup :overlay="false" get-container="body"  v-model="isSubPage" position="right" :style="{ width: '100%',height:'100%' }" >
+            <transition name="van-fade">
+                <keep-alive>
+                    <component :is="curComponent" @closed="isSubPage=false"
+                    @choose_khyh="choose_khyh" @choose_khss="choose_khss" @choose_fzh="choose_fzh" :formdata="form"
+                    ></component>
+                </keep-alive>
+
+            </transition>
+        </van-popup>
 
 
     </div>
 </template>
 <script>
     import {
-        bill_set_skzh
+        skzh_set_skzh_or_wldw,
+        skzh_get_by_id,
+        skzh_del_by_id
     } from 'api'
     import {
         mapGetters
@@ -53,32 +98,102 @@
         data() {
             return {
                 popupShow: false,
-                zhlxList: ['银行账户', '支付宝', '现金'],
+                zhlxList: ['银行账户'],
+                zhlx: '银行账户',
                 form: {
-                    zhlx: '银行账户',
-                    hm: "",
-                    zh: '',
+                    hm: '',
+                    yhkh: '',
+                    khyh: {},
+                    khss: {},
+                    fzh: {}
+                },
+                query_id: this.$route.query.id || null,
+                curComponent: '',
+                isSubPage: false,
+            }
+        },
+        components: {
+            khyh: ()=> import('./Bill_Get_ShouKuanZH_Add_KHYH'),
+            khss: ()=> import('./Bill_Get_ShouKuanZH_Add_KHSS'),
+            fzh: () => import('./Bill_Get_ShouKuanZH_Add_FZH')
+        },
+        computed: {
+            is_wldw(){
+                return this.$route.query.is_wldw || false
+            },
+            is_editmode(){
+                return this.$route.query.id || false
+            },
+            c_title(){
+                if(this.is_wldw) {
+
+                }else {
+                    return this.is_editmode? '修改收款账号': '添加收款账号'
                 }
             }
         },
-
-        computed: {
-
-        },
         methods: {
+            choose_khyh(val){
+                this.form.khyh = val;
+                this.isSubPage = false
+            },
+            choose_fzh(val){
+                this.form.fzh = val;
+                this.isSubPage = false
+            },
+            choose_khss(val){
+                this.form.khss = {
+                    shen: val[0],
+                    shi: val[1]
+                };
+                this.isSubPage = false
+            },
+            removeItem(){
+                 this.$dialog.confirm({
+                        title: '删除',
+                        message: '是否删除?',
+                    })
+                    .then(() => {
+                        return skzh_del_by_id(this.query_id).then(r => {
+                            this.$toast.success('删除成功');
+                            this.$emit('remove_done')
+                        }).catch(e => e)
+                    })
+                    .catch(() => {
+                        // on cancel
+                    });
+            },
+            async go2SubPage(view){
+                console.log(view)
+                if(view == 'fzh') {
+                    var proArr = ['khyh','khss'].map(el=> this.$refs.form.validate(el));
+                    var rs = await Promise.all(proArr).then(r=>true).catch(e=>false);
+                    if(rs == false) return this.$toast.fail('请先选择开户银行和省市!')
+                }
+                this.isSubPage = true;
+                this.curComponent = view
+            },
             onPopupConfirm(val, index) {
                 this.form.zhlx = val;
                 this.popupShow = false;
             },
             onSubmit() {
-                var zhlx = this.zhlxList.indexOf(this.form.zhlx) + 1;
-                bill_set_skzh({zhlx: zhlx,zhmc: this.form.hm,yhh:this.form.zh}).then(r=>{
-                    this.$toast.success('添加收款账户成功!')
-                    this.$store.dispatch('appGoback');
+                var data = this.form;
+                if(this.is_editmode) data.update_id = this.query_id;
+                skzh_set_skzh_or_wldw(data,this.is_wldw).then(r=>{
+                    this.$toast.success('添加成功!')
+                    this.$emit('save_done');
                 })
             }
         },
         created() {
+            if(this.query_id) {
+                skzh_get_by_id(this.query_id).then(r=>{
+                    console.log(r)
+                    this.form = r.data;
+                })
+
+            }
 
 
         },

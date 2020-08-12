@@ -19,7 +19,7 @@
         </van-cell>
         <van-divider marginless></van-divider>
         <van-cell-group class="marginTop">
-            <van-cell is-link title="收款账号" :to="{path:'/wode/bill_get_skzh'}"></van-cell>
+            <van-cell is-link title="收款账号" :to="{path:'/wode/bill_get_skzh',query:{mode:'manage'}}"></van-cell>
             <van-cell is-link title="清除缓存" @click="clearCache"></van-cell>
             <van-cell is-link title="退出应用" @click="exitApp"></van-cell>
             <van-cell is-link title="关于我们"></van-cell>

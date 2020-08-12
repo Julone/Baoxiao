@@ -2,15 +2,15 @@
     <div class="skzh-container">
         <van-nav-bar title="选择收款账户" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
-            <div v-for="el in card" :key="el.id" class="card" @click="$emit('select_skzh', el)">
+            <div v-for="(el,index) in card" :key="index" class="card" @click="onCardClick(el)">
                 <div class="title">
-                    银行户名
+                    {{el.zhmc}}
                 </div>
                 <div class="account">
-                    {{el.account}}
+                    {{el.yhzh}}
                 </div>
                 <div class="divider"></div>
-                <div class="label">{{el.label}}</div>
+                <div class="label">{{el.khyh}}</div>
                 <van-icon class="icon" name="coupon-o" />
             </div>
         </div>
@@ -32,16 +32,16 @@
                 </keep-alive>
             </div>
         </transition> -->
-        <van-popup :overlay="false" get-container="body" sanji-view v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" get-container="body"  v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
-                <router-view ></router-view>
+                <router-view @remove_done="removeDone()" @save_done="saveDone()"></router-view>
             </transition>
         </van-popup>
     </div>
 </template>
 <script>
     import {
-        bill_get_skzh
+        skzh_get_list
     } from 'api'
     import {
         mapGetters
@@ -50,19 +50,12 @@
     export default {
         data() {
             return {
-                list: [],
-                card: [{
-                    id: 2342,
-                    account: '62290815306223598741',
-                    label: '未填写支行信息'
-                }]
+                card: [],
+                mode: this.$route.query.mode || 'select'
             }
         },
 
         computed: {
-            curTypeList() {
-                return this.typeList[this.activeKey]
-            },
             isErjiRoute: {
                 get(){
                     return this.$route.name == 'bill_get_skzh_add'
@@ -71,19 +64,35 @@
             },
             ...mapGetters(['app_height'])
         },
-        created() {
-            bill_get_skzh().then(r => {
-                if (r.errcode == 0 && r.data.length) {
-                    this.list = r.data.map(el => {
-                        return {
-                            
-                        }
-                    })
+        methods: {
+            onCardClick(el){
+                if(this.mode == 'select'){
+                    this.$emit('select_skzh', el)
+                }else {
+                    this.$router.push({path: './bill_get_skzh/add', query: {mode: 'edit',id: el.id}})
                 }
-            })
-            for(var i =0;i<10;i++){
-                this.card.push(this.card[0])
+            },
+            getData(){
+                return skzh_get_list().then(r => {
+                    if (r.errcode == 0 && r.data.length) {
+                        this.card = r.data.map(el => {
+                            return el
+                        })
+                    }
+                })
+            },
+            saveDone(){
+                this.getData();
+                this.$store.dispatch('appGoback')
+            },
+            removeDone(){
+                this.getData();
+                this.$store.dispatch('appGoback')
             }
+        },
+        created() {
+            this.getData();     
+       
         },
         activated() {
 
@@ -135,6 +144,7 @@
 
                 .label {
                     font-size: .6em;
+                    line-height: 2em;;
                 }
 
                 .icon {
