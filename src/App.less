@@ -40,9 +40,10 @@
 }
 [transparent]{
     opacity: 0 !important;
-
 }
-
+[noEvent]{
+    pointer-events: none !important;
+}
 .sticky{
     position:sticky !important;
     top: 0;
@@ -111,6 +112,7 @@
     padding: 10px;
     background: white;
     right: 0;
+    border-top: 1px solid #eceef1;;
     padding-bottom: calc(constant(safe-area-inset-bottom) + 10px);
     padding-bottom: calc( env(safe-area-inset-bottom) + 10px);
 }
@@ -184,14 +186,10 @@
     .right {
         .flex(@d: column; @a: flex-end);
         flex: none;
-
         .bottom {
             font-size: 70%;
             color: gray;
         }
-
         .top {}
     }
-
-
 }

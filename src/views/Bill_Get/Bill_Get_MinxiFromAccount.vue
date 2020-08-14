@@ -29,7 +29,7 @@
 </template>
 <script>
     import {
-        account_get_danjuList
+        account_get_list
     } from 'api'
     import {
         mapGetters
@@ -90,7 +90,7 @@
                 var status = this.filterOptions.status;
                 var group = this.filterOptions.sortable;
                 var djlb = this.filterOptions.ywcj
-                return account_get_danjuList({
+                return account_get_list({
                     status,
                     group,
                     djlb

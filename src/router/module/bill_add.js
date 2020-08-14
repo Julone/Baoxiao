@@ -17,7 +17,7 @@ export default {
         {
         name: 'bill_add_wanlai_danwei',
         path: 'wanlai_danwei',
-        component: () => import('@/views/Bill_Add/Bill_Add_WanLaiDanWei.vue')
+        component: () => import('@/views/ShouKuan_WanLai/WanLaiDanWei.vue')
         },
         {
         name: 'bill_add_fentang',

@@ -16,12 +16,12 @@
       </div>
     </header>
     <main>
-      <van-grid :border="false" clickable>
+      <!-- <van-grid :border="false" clickable>
         <van-grid-item icon="description" text="发票抬头" />
         <van-grid-item icon="after-sale" text="里程补贴" />
         <van-grid-item icon="records" text="发票导入" />
         <van-grid-item icon="paid" text="第三方消费" />
-      </van-grid>
+      </van-grid> -->
     </main>
 
   </div>
@@ -61,8 +61,10 @@
           }
         ]
       }
+    },
+    created(){
+     this.$store.dispatch('appStart', this.$route.query.apptoken);
     }
-
   }
 </script>
 <style lang="less">

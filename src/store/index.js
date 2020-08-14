@@ -5,6 +5,7 @@ import router from './../router'
 import auth from './module/auth';
 import ywcj from './module/ywcj';
 import reg from './module/reg'
+import {Toast} from 'vant'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -20,11 +21,11 @@ export default new Vuex.Store({
     appGoback({}){
       router.go(-1);
     },
-    appStart({dispatch}){
-      dispatch('auth_getUserInfo').then(r=>{
+    appStart({dispatch}, apptoken){
+      dispatch('auth_getUserInfo', apptoken).then(r=>{
         dispatch('ywcj_get_ywcl_list');
-      }).catch( e=> {
-        this.$toast('用户鉴权失败!')
+      }).catch( e => {
+        Toast('鉴权失败, 请退出重试!')
       })
     }
   },
@@ -32,7 +33,6 @@ export default new Vuex.Store({
     app_height: state => state.appHeight
   },
   modules: {
-    home,auth,ywcj,
-    reg
+    home,auth,ywcj, reg
   }
 })

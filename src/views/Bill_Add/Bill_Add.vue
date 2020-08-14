@@ -4,7 +4,7 @@
             <van-nav-bar :title="edit_mode?'费用明细':'新建费用'" fixed placeholder style="height:12vw" left-text="返回" left-arrow
                 @click-left="$store.dispatch('appGoback')">
                 <template #right>
-                    <accountPicker></accountPicker>
+                    <accountPicker disabled></accountPicker>
                 </template>
             </van-nav-bar>
             <!-- expense_type -->
@@ -41,7 +41,7 @@
                         {{form.dprq | date('yyyy-MM-dd')}}
                         <van-popup get-container="body" v-model="dprqStatus" position="bottom">
                             <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="formatter"
+                                :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="dataFormatter"
                                 @confirm="onDateConfirm" @cancel="dprqStatus=false" />
                         </van-popup>
                     </van-cell>
@@ -72,7 +72,7 @@
                             {{form.dprq | date('yyyy-MM-dd')}}
                             <van-popup get-container="body" v-model="dprqStatus" position="bottom">
                                 <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="formatter"
+                                    :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="dataFormatter"
                                     @confirm="onDateConfirm" @cancel="dprqStatus=false" />
                             </van-popup>
                         </van-cell>
@@ -86,7 +86,7 @@
                         </van-field>
                         <van-cell-group :border="false">
                             <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
                             </van-field>
@@ -107,7 +107,7 @@
                             {{form.dprq | date('yyyy-MM-dd')}}
                             <van-popup get-container="body" v-model="dprqStatus" position="bottom">
                                 <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
+                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="dataFormatter"
                                     @confirm="onDateConfirm" @cancel="dprqStatus=false" />
                             </van-popup>
                         </van-cell>
@@ -121,7 +121,7 @@
                         </van-field>
                         <van-cell-group :border="false">
                             <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
                             </van-field>
@@ -142,7 +142,7 @@
                             {{form.dprq | date('yyyy-MM-dd')}}
                             <van-popup get-container="body" v-model="dprqStatus" position="bottom">
                                 <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
-                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="formatter"
+                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="dataFormatter"
                                     @confirm="onDateConfirm" @cancel="dprqStatus=false" />
                             </van-popup>
                         </van-cell>
@@ -156,7 +156,7 @@
                         </van-field>
                         <van-cell-group :border="false">
                             <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
-                                @click="go2sub({name: 'bill_add_wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
                                 :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
                             </van-field>
@@ -201,14 +201,16 @@
                     <van-cell-group border class="marginTop cell-group">
                         <div class="title">发票</div>
                         <div class="content">
-                            <van-uploader :after-read="afterRead" >
-                                <van-button native-type="button" bgless style="width:100%" block borderless type="info" plain>上传发票</van-button>
+                            <van-uploader :after-read="afterRead" :before-read="beforeRead" accept="image/*">
+                                <van-button native-type="button" bgless style="width:100%" 
+                                :loading="uploading" loading-text="正在上传中..." :disabled="uploading"
+                                block borderless type="info" plain icon="photograph">上传发票
+                                </van-button>
                             </van-uploader>
-                            
                             <van-swipe-cell class="fapiao_list" v-for="(el,index) in fp_info" :key="el.id">
                                 <van-cell clickable class="fapiao">
                                     <template #title>
-                                        <div class="fapiao-title">
+                                        <div class="fapiao-title" @click="onFapiaoClick(el)">
                                             <div class="left">
                                                 <img :src="el.imgurl" @click="onPreviewFapiao(el.imgurl)" width="40" height="40" alt="">
                                             </div>
@@ -230,10 +232,12 @@
                                 </van-cell>
                                 <template #right>
                                     <div class="right-swipe-item">
-                                        <van-button style="height:100%" @click="fp_info.splice(index,1)" type="danger" icon="cross" class="delete-button" />
+                                        <van-button style="height:100%" @click="onFapiaoFill(el)" native-type="button" type="primary" icon="records" />
+                                        <van-button style="height:100%" @click="fp_info.splice(index,1)" native-type="button" type="danger" icon="cross" />
                                     </div>
                                 </template>
                             </van-swipe-cell>
+                        
                         </div>
                     </van-cell-group>
                     <!-- 分摊 -->
@@ -283,7 +287,8 @@
                 </div>
             </van-form>
         </div>
-        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }"
+            get-container="body" :lock-scroll="!isErjiRoute">
             <transition name="van-fade">
                 <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw" @chooseHxfy="chooseHxfy" ></router-view>
             </transition>
@@ -297,7 +302,8 @@
         bill_add_get_weidaopiao_money,
         bill_edit_get_danjuInfo,
         parse_info_from_base64,
-        bill_del_danju
+        bill_del_danju,
+        bill_add_get_wldw_by_name
     } from 'api'
     import {
         dateFormat
@@ -333,16 +339,11 @@
                     fp_info:[]
                 },
                 saveId: [],
-                update_id: this.$route.query.dj_id || null
+                update_id: this.$route.query.dj_id || null,
+                uploading:false
             }
         },
         watch: {
-            isErjiRoute: {
-                immediate: true,
-                async handler(val) {
-                    await this.$nextTick()
-                }
-            },
             async 'form.ywcj.id'(val) {
                 await this.$nextTick();
                 this.$refs.form && this.$refs.form.resetValidation();
@@ -367,10 +368,11 @@
         created() {
             if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
                 //二级路由处理
-                this.$router.push({
-                    name: 'bill_add'
-                })
+                // this.$router.push({
+                //     name: 'bill_add'
+                // })
             }
+            this.form.ywcj = this.ywcjColumns[0];
             if(this.update_id) {
                 var loading = this.$toast.loading({message:'加载中...',duration:0})
                 bill_edit_get_danjuInfo(this.update_id).then(r=>{
@@ -405,7 +407,6 @@
                     loading.close();
                 })
             }
-            this.form.ywcj = this.ywcjColumns[0];
         },
         methods: {
             open_hexiao(){
@@ -414,51 +415,85 @@
                 })
             },
             onPreviewFapiao(el){
-                ImagePreview([el]);
+                ImagePreview({
+                    images: [el],
+                    closeable: true,
+                });
+            },
+            async beforeRead(file){
+                if(!file.type.includes('image'))  return this.$toast('暂时只支持图片文件!');
             },
             afterRead(object){
-                var l = this.$toast.loading({
-                    message:'正在识别中...',
-                    duration:0
-                });
+                this.uploading = true;
                 pictureCompress({
                     img: object.content,
-                    width: 1500,
-                    height: 1500,
-                    fit: 'scale'
+                    width: 1200,
+                    height: 1200,
+                    fit: 'scale',
+                    type: 'jpg'
                 }).then(res => {
                     parse_info_from_base64(res.img.replace(/^data:image\/\w+;base64,/, "")).then(r=>{
                         try{
                             var json = JSON.parse(r.data.data);
                             var imgurl = r.data.imgPath;
-                            var ret = json.data.ret[0];
+                            var ret = json.data.ret.find(el=> el.templateSign != 'others') || json.data.ret[0];
                             var obj = fapiaoHandler(ret);
-                            if( Number(this.form.bcdp) == 0 && !this.edit_mode){
-                                this.form.bcdp = obj.invoice_money;
-                            }
-                            try{
-                                this.form.dprq = new Date(obj.invoice_date.replace(/(年|月|日)/g,'/').slice(0,-1))
-                            }catch(e){
-                                this.form.dprq= new Date();
+                            if(this.fp_info.length == 0) {
+                                this.onFapiaoFill(obj, false);
                             }
                             console.log(ret);
                             obj.imgurl = imgurl.replace('../','http://webt.lilang.com:9001/');
                             obj.imgjson_row = JSON.stringify(ret);
                             obj.imgjson_info = JSON.stringify(obj);
                             this.fp_info.push(obj);
-                            l.close();
                             console.log(json)
                         }catch(e){
                             console.error(e);
+                            this.$toast.fail('发票格式错误!')
                         }
-                      
                     }).catch(e=>{
-                        l.close();
+                        var errmsg = e.message || '识别失败, 请稍后重试!'
+                        errmsg = errmsg.replace('Error:', '');
+                        this.$toast.fail(errmsg)
+                    }).finally(()=>{
+                        this.uploading = false
                     })
-                });
+                }).catch(e=> {
+                    // console.log(e);
+                    this.$toast.fail('图片压缩失败, 请稍后重试!')
+                })
+       
+            },
+            onFapiaoClick(el){
+                console.log(el);
+                this.onPreviewFapiao(el.imgurl)
+            },
+            async onFapiaoFill(obj, showToast = true){
+                if(obj.type == 'others') {
+                   showToast && this.$toast('暂不支持未知发票!')
+                   return false;
+                }
+                this.form.bcdp = obj.invoice_money;
+                this.form.dprq = obj.invoice_date;
+                var zhmc = obj.invoice_wanlai;
+                if(!this.form.duisi && zhmc) {
+                    bill_add_get_wldw_by_name(zhmc).then(r=>{
+                        if(r.data.length > 0) {
+                            this.form.wanlai_danwei = r.data[0];
+                            showToast && this.$toast.success('智能填充完成!')     
+                        }else {
+                            return Promise.reject(false);
+                        }
+                    }).catch(e=> {
+                        this.$toast('找不到此往来单位,请手动查找!');
+                        return false;
+                    })
+                }else {
+                    showToast && this.$toast.success('智能填充完成!')                    
+                }
             },
             getHexiaoFeiyong(){
-                 if(this.form.ywcj.id == 7189) {
+                 if(this.form.ywcj.id == 7189 || this.form.ywcj.id == 7186) {
                     var zhmc = this.form.wanlai_danwei.zhmc;
                     bill_add_get_weidaopiao_money({zhmc}).then(r=>{
                         console.log(r);
@@ -483,59 +518,41 @@
                     this.$toast.fail(e.message);
                 })
             },
-            onAddSave() {
-                this.$refs.form.validate().then(r => {
-                    this.onSubmit().then(r => {
-                        if (this.$route.query.from) {
-                            this.$router.push({
-                                name: this.$route.query.from,
-                                query: {
-                                    fyid: this.saveId.join('_')
-                                }
-                            });
-                        }else{
-                             this.$router.push({
-                                name: 'account'
-                            })
+            
+            async onEditRemove(){
+                var isDelete = await this.$dialog.confirm({ title: '删除', message: '是否删除?', }) .then(r => true).catch(e=>false);
+                if( !isDelete ) return;
+                bill_del_danju(this.update_id).then(r => {
+                    this.$toast.success('删除成功');
+                    this.$router.push({
+                        name: 'account',
+                        params: {
+                            del_id: this.update_id
                         }
                     })
-                })
+                }).catch(e => e)
             },
-            onEditRemove(){
-                     this.$dialog.confirm({
-                        title: '删除',
-                        message: '是否删除?',
-                    })
-                    .then(() => {
-                        return bill_del_danju(this.update_id).then(r => {
-                            this.$toast.success('删除成功');
-                             this.$router.push({
-                            name: 'account'
-                        })
-                        }).catch(e => e).finally(() => {
-                           
-                        })
-                    })
-                    .catch(() => {
-                    });
-            },
-            onEditSave(){
+            async onEditSave(){
                 this.$refs.form.validate().then(r => {
                     this.onSubmit(this.update_id).then(async r => {
                         this.$router.push({
-                            name: 'account'
+                            name: 'account',
+                            params: {
+                                update_id: this.update_id
+                            }
                         })
                     })
                 })
             },
-            openFentang() {
-                return this.$refs.form.validate('xfje').then(r => {
-                    this.$router.push({
-                        name: 'bill_add_fentang'
+            async onAddSave() {
+                this.$refs.form.validate().then(r => {
+                    this.onSubmit().then(r => {
+                            this.$router.push({
+                                name: 'account',
+                            }).then(r=>{
+                                this.$eventBus.$emit('refreshView')
+                            })
                     })
-                }).catch(e => {
-                    this.$refs.form.scrollToField('xflx');
-                    this.$toast.fail(e.message);
                 })
             },
             async onAddSaveAgain() {
@@ -561,31 +578,13 @@
                 var dgbs = this.form.duisi? 2 : 1;
                 var ft_info = this.form.ft_info;
                 var fp_info = this.fp_info;
-                var wdp_list = this.form.ywcj.id == 7189 ? this.form.wdp_list: []
-                var obj = {
-                        djlx,
-                        djlb,
-                        rq,
-                        zhid,
-                        je,
-                        zhbj,
-                        bz,
-                        fydlmc,
-                        fylxmc,
-                        fylxid,
-                        zhmc,
-                        dgbs,
-                        ny,
-                        ft_info,
-                        wdp_list,
-                        fp_info
-                }
+                var wdp_list = this.form.wdp_list;
+                var obj = { djlx, djlb, rq, zhid, je, zhbj, bz, fydlmc, fylxmc, fylxid, zhmc, dgbs, ny, ft_info, wdp_list, fp_info }
                 if(update_id) {
                     obj.update_id = update_id
                 }
                 return new Promise((res, rej) => {
                    return bill_set_data(obj).then(r => {
-                        console.log(r);
                         if (r.errcode == 0) {
                             this.saveId.push(r.data.id);
                             this.$toast.success('保存成功!');
@@ -597,13 +596,22 @@
                     })
                 })
             },
+            openFentang() {
+                return this.$refs.form.validate('xfje').then(r => {
+                    this.$router.push({
+                        name: 'bill_add_fentang'
+                    })
+                }).catch(e => {
+                    this.$refs.form.scrollToField('xflx');
+                    this.$toast.fail(e.message);
+                })
+            },
             chooseXflx(val) {
                 this.form.xflx = val;
                 this.form.duisi = val.dgbs == 0;
                 this.$store.dispatch('appGoback');
             },
             chooseWldw(val) {
-                console.log(val);
                 this.form.wanlai_danwei = val;
                 this.$store.dispatch('appGoback');
                 this.getHexiaoFeiyong();
@@ -616,16 +624,8 @@
                 this.form.ywcj = value;
                 this.ywcjStatus = false;
             },
-
-            formatter(type, val) {
-                if (type === 'year') {
-                    return `${val}年`;
-                } else if (type === 'month') {
-                    return `${val}月`;
-                } else {
-                    return `${val}日`
-                }
-                return val;
+            dataFormatter(type, val) {
+                return type === 'year'? `${val}年`: type === 'month' ?  `${val}月`: type==='day' ? `${val}日`: val;
             },
             onDateConfirm() {
                 this.dprqStatus = false;
@@ -669,9 +669,7 @@
     }
 
     .bill_add_container {
-
         .bill_add_wrapper {
-
             .van-form {
                 padding-bottom: 100px;
             }
@@ -732,8 +730,19 @@
                     font-size: 14px;
                     line-height: 40px;
                     height: 40px;
-                    padding-left: 20px;
+                    padding-left: 18px;
                     border-bottom: 1px solid #ebedf0;
+                    position: relative;
+                    &::before{
+                        content: '';
+                        width: 5px;
+                        height: 36%;
+                        background: @j_main_color;
+                        display: block;
+                        position: absolute;
+                        top: 32%;
+                        left:6px;
+                    }
                 }
 
                 .content {
@@ -755,6 +764,7 @@
             .van-uploader__input-wrapper{
                 flex:1;
             }
+        
             .fapiao {
                 border-top: 2px solid #f4f5f7;
 

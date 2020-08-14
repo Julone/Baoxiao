@@ -30,7 +30,6 @@
                             </template>
                         </van-field>
                         <van-field :border="false" name="radio" label="对公对私">
-
                             <template #input>
                                 <van-radio-group v-model="filterOptions.publicType" direction="horizontal">
                                     <van-radio style="padding:10px;" v-for="o in filterOptionsLabel.publicType"
@@ -49,9 +48,11 @@
                 </van-popup>
             </div>
             <div class="right-item">
+                <van-button borderless marginless @click="$eventBus.$emit('refreshView')" size="small">
+                    <big> <van-icon class="blue-text" name="replay" /></big>
+                </van-button>
                 <van-button borderless marginless :to="{name: 'bill_add'}" size="small">
-                    <big>
-                        <van-icon class="blue-text" name="plus" /></big>
+                    <big> <van-icon class="blue-text" name="plus" /></big>
                 </van-button>
             </div>
         </nav>
@@ -61,7 +62,9 @@
             <a class="blue-text" @click="checkMode = false">取消</a>
         </nav>
         <van-pull-refresh v-model="refreshing" success-text="刷新成功" @refresh="onRefresh">
-            <main style="min-height:80vh">
+            <!-- <main style="min-height:80vh"> -->
+            <van-list v-model="loading" :finished="finished" finished-text="没有更多了" @load="onLoad" :error.sync="error"
+                error-text="请求失败，点击重新加载" :immediate-check="true">
                 <van-collapse v-model="activeNames" v-if="accountList.length > 0">
                     <van-collapse-item v-show="acc.children.length" v-for="(acc,index) in accountList" :key="index"
                         :name="index" :title="acc.title">
@@ -91,12 +94,12 @@
                                 <div class="duigong" v-if="el.zhbj == 1">
                                     <div class="cell">
                                         <van-icon name="points" color="#1989fa" />
-                                        {{el.ywcj.id == 7188? '未到票': '本期到票'}}:
+                                        {{el.ywcj.id == 7184? '本期到票': '未到票'}}:
                                         <span><small>¥</small>{{el.money}}</span>
                                     </div>
                                     <div class="cell">
                                         <van-icon name="calender-o" color="#1989fa" />
-                                        {{el.ywcj.id == 7188? '预计到票': '到票日期'}}:
+                                        {{el.ywcj.id == 7184?'到票日期': '预计到票'}}:
                                         <span>{{el.rq | date('yyyy-MM-dd')}}</span>
                                     </div>
                                 </div>
@@ -113,15 +116,14 @@
                         </van-swipe-cell>
                     </van-collapse-item>
                 </van-collapse>
-             
-                <div class="flex marginTop marginBottom" style="padding:10px 0;">
-                    <van-loading v-if="loading && !refreshing" type="spinner" />
-                    <div v-if="!loading && !refreshing">
-                        <van-empty v-if=" !error&&  accountList.length == 0" description="暂无消费记录" />
-                        <span class="van-empty__description" v-if="error" @click="getData">请求失败,点击重试</span>
-                    </div>
+                <!-- <div style="height:400px" v-else></div> -->
+
+                <div v-if="!loading && !refreshing && !error &&  accountList.length == 0"
+                    class="flex marginTop marginBottom" style="padding:0 0 400px;">
+                    <van-empty description="暂无消费记录" />
                 </div>
-            </main>
+            </van-list>
+            <!-- </main> -->
         </van-pull-refresh>
         <!-- 底部保存 -->
         <div v-if="checkMode" class="van-tabbar--fixed bottom_saved_buttons">
@@ -156,8 +158,9 @@
 </template>
 <script>
     import {
-        account_get_danjuList,
-        bill_del_danju
+        account_get_list,
+        bill_del_danju,
+        bill_edit_get_danjuInfo
     } from 'api'
     import {
         dateFormat
@@ -219,7 +222,10 @@
                 activeNames: [],
                 checkMode: false,
                 isSelectAll: false,
-
+                rowList: [],
+                page: 1,
+                limit: 3,
+                finished: false
             }
         },
         watch: {
@@ -256,24 +262,18 @@
                     .then(() => {
                         return bill_del_danju(id).then(r => {
                             this.$toast.success('删除成功');
+                            // this.silentCheck();
+                            var i = this.rowList.findIndex(el => el.id == id);
+                            if (i != -1) this.rowList.splice(i, 1);
                         }).catch(e => e).finally(() => {
-                            this.getData();
+                            this.handleData();
                         })
                     })
                     .catch(() => {
                         // on cancel
                     });
             },
-            onRefresh() {
-                this.checkMode = false;
-                this.getData().then(r => {
-                    console.log(r);
-                }).catch(e => {
 
-                }).finally(() => {
-                    this.refreshing = false
-                })
-            },
             onItemClick(el, acc, bool) {
                 if (this.checkMode) {
                     el.checked = !el.checked;
@@ -320,46 +320,92 @@
                 this.showDrop = false
                 this.getData();
             },
+
+            handleData() {
+                var data = this.rowList.reduce((t, ele) => {
+                    ele.expenseType = ele.xflx.fylxmc;
+                    ele.money = Number(ele.je).toFixed(2);
+                    ele.checked = false;
+                    ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
+                    ele.icon = 'balance-o';
+                    var key = dateFormat(ele.rq, 'yyyy-MM-dd');
+                    t[key] ? t[key].children.push(ele) : (t[key] = {
+                        title: key,
+                        children: [ele]
+                    });
+                    return t;
+                }, {});
+                this.accountList = Object.values(data);
+                this.activeNames = this.accountList.map((el, i) => i);
+            },
+            onLoad() {
+                this.getData();
+            },
+            onRefresh() {
+                this.checkMode = false;
+                this.page = 1;
+                this.finished = false;
+                this.loading = true;
+                console.log('刷新中');
+                this.getData().then(r => {
+
+                }).catch(e => {
+
+                }).finally(() => {
+                    this.refreshing = false
+                })
+            },
             getData() {
                 var status = this.filterOptions.status;
                 var group = this.filterOptions.sortable;
                 var zhbj = this.filterOptions.publicType;
-                this.loading = true
-                return account_get_danjuList({
+                if (this.refreshing) {
+                    this.rowList = [];
+                    this.accountList= [];
+                    this.refreshing = false;
+                }
+                return account_get_list({
                     status,
                     group,
-                    zhbj
+                    zhbj,
+                    page: this.page,
+                    limit: this.limit
                 }).then(r => {
-                    var data = r.data.reduce((t, ele) => {
-                        console.log(ele)
-                        ele.expenseType = ele.xflx.fylxmc;
-                        ele.money = Number(ele.je).toFixed(2);
-                        ele.checked = false;
-                        ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
-                        ele.icon = 'balance-o';
-                        var key = dateFormat(ele.rq, 'yyyy-MM-dd');
-                        t[key] ? t[key].children.push(ele) : (t[key] = {
-                            title: key,
-                            children: [ele]
-                        });
-                        return t;
-                    }, {});
-                    this.accountList = Object.values(data);
-                    this.activeNames = this.accountList.map((el, i) => i);
-                    console.log(this.accountList)
+                    // if(r.data.length == 0){
+                    if (r.data.length == 0) {
+                        return this.finished = true
+                    }
+                    this.rowList.push(...r.data);
+                    this.handleData();
+                    this.page = this.page + 1
                     return r;
                 }).catch(e => {
                     this.error = true;
                 }).finally(() => {
                     this.loading = false;
                 })
+            },
+            async silentCheck() {
+                console.log('silent check');
+                var del_id = this.$route.params.del_id;
+                var update_id = this.$route.params.update_id;
+                if (del_id >= 0) {
+                    var i = this.rowList.findIndex(el => el.id == del_id);
+                    if (i != -1) this.rowList.splice(i, 1);
+                }
+                if (update_id >= 0) {
+                    var newData = await bill_edit_get_danjuInfo(update_id).then(r => r.data)
+                    var i = this.rowList.findIndex(el => el.id == update_id);
+                    if (i != -1) this.rowList.splice(i, 1, newData);
+                }
+                this.handleData();
             }
         },
         created() {
-            this.getData();
+            // this.getData();
         },
         activated() {
-            this.getData();
+            this.silentCheck();
             this.$nextTick(() => {
                 if (this.$route.meta.savedPosition) {
                     window.scrollTo(0, this.$route.meta.savedPosition.y)
@@ -416,7 +462,9 @@
             }
         }
 
-        main {
+        .van-list {
+            min-height: 70vh;
+
             .van-collapse-item {
                 &>.van-collapse-item__title {
                     background: #ecf3fa;

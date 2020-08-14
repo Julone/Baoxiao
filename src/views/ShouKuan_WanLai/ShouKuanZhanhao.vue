@@ -1,6 +1,6 @@
 <template>
     <div class="skzh-container">
-        <van-nav-bar title="选择收款账户" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
+        <van-nav-bar :title="isEditMode? '收款账号' : '选择收款账户'" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
             <div v-for="(el,index) in card" :key="index" class="card" @click="onCardClick(el)">
                 <div class="title">
@@ -62,14 +62,19 @@
                 },
                 set(){}
             },
+            isEditMode(){
+                return this.$route.query.mode == 'edit'
+            },
             ...mapGetters(['app_height'])
         },
         methods: {
             onCardClick(el){
-                if(this.mode == 'select'){
-                    this.$emit('select_skzh', el)
-                }else {
+                if(this.isEditMode){
+                    console.log(this.$route);
                     this.$router.push({path: './bill_get_skzh/add', query: {mode: 'edit',id: el.id}})
+                }else {
+                             this.$emit('select_skzh', el)
+                
                 }
             },
             getData(){

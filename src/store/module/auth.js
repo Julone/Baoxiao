@@ -3,7 +3,8 @@ import {auth_get_user_info} from 'api'
 import {Toast} from 'vant'
 export default {
     state: {
-        apptoken: getStorage({name: 'apptoken'}) || "103ac4c22bcc8a71",
+        apptoken: getStorage({name: 'apptoken'}) || "", // 103ac4c22bcc8a71 //4c8f9c243b7954cd
+        activeAccount: getStorage({name: 'activeAccount'}) || {},
         accountList: getStorage({name: 'accountList'}) || [],
         // {
         //     khdm: "C36221"
@@ -14,15 +15,14 @@ export default {
         //     zbid: 1
         // }
         userinfo: getStorage({name: 'userinfo'}) || {},
-        activeAccount: getStorage({name: 'activeAccount'}) || {}
-        // {
+         // {
         //     onoff: 1, id: 25604, cname: "李祖龙"
         // }
     },
     mutations:{
         SET_APPTOKEN(state, apptoken){
             state.apptoken = apptoken;
-            setStorage({name: 'apptoken', content: apptoken})
+            setStorage({name: 'apptoken',type: 'session', content: apptoken})
         },
         SET_ACTIVE_ACCOUNT(state,account){
             state.activeAccount = account;
@@ -34,26 +34,23 @@ export default {
         },
         SET_USERINFO(state,userinfo){
             state.userinfo = userinfo;
-            setStorage({name: 'userinfo', content: userinfo});
+            setStorage({name: 'userinfo',type: 'session', content: userinfo});
         }
     },
     actions:{
-        auth_getUserInfo({state,commit, dispatch}, val){
-            if(validatenull(state.userinfo) || validatenull(state.accountList) || validatenull(state.activeAccount)){
-                return auth_get_user_info(state.apptoken).then(r=>{
-                    if(r.errcode == 0) {
-                        commit('SET_ACCOUNT',r.data.account );
-                        commit('SET_USERINFO',r.data.info[0]);
-                        dispatch('choose_active_account',r.data.account[0]);             
-                        return true;
-                    }else {
-                        return false;
-                    }
+        auth_getUserInfo({state,commit, dispatch}, apptoken){
+            if(validatenull(state.userinfo)) {
+                apptoken = process.env.NODE_ENV =='development'? '4c8f9c243b7954cd' : apptoken
+                return auth_get_user_info(apptoken).then(r=>{
+                    commit('SET_APPTOKEN', apptoken);
+                    commit('SET_ACCOUNT',r.data.account );
+                    commit('SET_USERINFO',r.data.info[0]);
+                    dispatch('choose_active_account',r.data.account[0]);
+                    Toast('欢迎您, '+ state.userinfo.cname);
+                    return Promise.resolve(true);
                 }).catch(e => {
-                    return false;
+                    return Promise.reject(false);
                 })
-            }else{
-                return Promise.resolve(true)
             }
         },
         choose_active_account({state,commit}, val){

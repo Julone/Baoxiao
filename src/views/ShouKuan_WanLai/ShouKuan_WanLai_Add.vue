@@ -13,7 +13,6 @@
                         </van-picker>
                     </van-popup>
                 </van-cell-group>
-                {{form}}
                 <van-cell-group v-if="zhlx == '银行账户'">
                     <van-field label="户名" v-model="form.hm" placeholder="请输入户名" required name="hm" :rules="[{ required: true, message: '请输入户名' }]"></van-field>
                     <van-field label="银行卡号" v-model="form.yhkh" placeholder="请输入帐号" required name="'zh" :rules="[{ required: true, message: '请输入帐号' }]"></van-field>
@@ -70,18 +69,15 @@
                 </div>
             </van-form>
         </div>
-        <van-popup :overlay="false" get-container="body"  v-model="isSubPage" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" get-container="body"  v-model="isSubPage" :lock-scroll="!isSubPage" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
                 <keep-alive>
                     <component :is="curComponent" @closed="isSubPage=false"
                     @choose_khyh="choose_khyh" @choose_khss="choose_khss" @choose_fzh="choose_fzh" :formdata="form"
                     ></component>
                 </keep-alive>
-
             </transition>
         </van-popup>
-
-
     </div>
 </template>
 <script>
@@ -112,21 +108,25 @@
                 isSubPage: false,
             }
         },
+        props: {
+            is_wldw: {
+                default: false,
+                type:Boolean
+            }
+        },
         components: {
-            khyh: ()=> import('./Bill_Get_ShouKuanZH_Add_KHYH'),
-            khss: ()=> import('./Bill_Get_ShouKuanZH_Add_KHSS'),
-            fzh: () => import('./Bill_Get_ShouKuanZH_Add_FZH')
+            khyh: ()=> import('./ShouKuan_WanLai_Add_KHYH'),
+            khss: ()=> import('./ShouKuan_WanLai_Add_KHSS'),
+            fzh: () => import('./ShouKuan_WanLai_Add_FZH')
         },
         computed: {
-            is_wldw(){
-                return this.$route.query.is_wldw || false
-            },
+        
             is_editmode(){
                 return this.$route.query.id || false
             },
             c_title(){
                 if(this.is_wldw) {
-
+                    return '添加往来单位'
                 }else {
                     return this.is_editmode? '修改收款账号': '添加收款账号'
                 }
@@ -148,21 +148,7 @@
                 };
                 this.isSubPage = false
             },
-            removeItem(){
-                 this.$dialog.confirm({
-                        title: '删除',
-                        message: '是否删除?',
-                    })
-                    .then(() => {
-                        return skzh_del_by_id(this.query_id).then(r => {
-                            this.$toast.success('删除成功');
-                            this.$emit('remove_done')
-                        }).catch(e => e)
-                    })
-                    .catch(() => {
-                        // on cancel
-                    });
-            },
+           
             async go2SubPage(view){
                 console.log(view)
                 if(view == 'fzh') {
@@ -176,6 +162,21 @@
             onPopupConfirm(val, index) {
                 this.form.zhlx = val;
                 this.popupShow = false;
+            },
+             removeItem(){
+                 this.$dialog.confirm({
+                        title: '删除',
+                        message: '是否删除?',
+                    })
+                    .then(() => {
+                        return skzh_del_by_id(this.query_id).then(r => {
+                            this.$toast.success('删除成功');
+                            this.$emit('remove_done')
+                        }).catch(e => e)
+                    })
+                    .catch(() => {
+                        // on cancel
+                    });
             },
             onSubmit() {
                 var data = this.form;

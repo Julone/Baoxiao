@@ -41,6 +41,13 @@ module.exports = {
                     '^/apicc': ''
                 }
             },
+            '^/apidd': {
+              target: 'http://192.168.36.152:8081',
+                  changeOrigin: true,
+                  pathRewrite: {
+                      '^/apidd': ''
+                  }
+              },
 
             '^/api': {
                 target: 'http://192.168.36.171:8080',

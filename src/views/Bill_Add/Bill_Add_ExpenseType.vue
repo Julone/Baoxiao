@@ -177,7 +177,7 @@
 
             .content {
                 overflow: hidden;
-                height: 55px;
+                height: 50px;
                 padding: 1px;
             }
 

@@ -135,7 +135,7 @@
                 </keep-alive>
             </div>
         </transition> -->
-        <van-popup :overlay="false" get-container="body" erji-view v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" get-container="body" erji-view v-model="isErjiRoute" :lock-scroll="!isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
                 <keep-alive>
                 <router-view @select_dept="select_dept" @select_skzh="select_skzh" @select_minxi="select_minxi"></router-view>

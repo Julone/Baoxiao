@@ -1,8 +1,9 @@
 import axios, {axiosSilent, axiosJson} from './axios';
-var url = process.env.NODE_ENV == 'development' ? '/apicc' : 'http://webt.lilang.com/api-proxy/cost-api';
+
+var url = process.env.NODE_ENV == 'development' ? '/apicc' : 'http://elilee.mynatapp.cc/api-proxy/receiptApi';
 // var url = process.env.NODE_ENV == 'development' ? 'http://elilee.mynatapp.cc/api-proxy/receiptApi' : 'http://elilee.mynatapp.cc/api-proxy/receiptApi';
 import store from '@/store'
-
+import {Toast} from 'vant'
 export function bill_get_expense_type() {
     return axios({
         url: url + "/getFylx",
@@ -25,28 +26,42 @@ export function bill_get_ywcj() {
         }
     })
 }
-export function auth_get_user_info(apptoken) {
+export function auth_get_user_info(apptoken = "") {
     return axios({
         url: 'http://tm.lilanz.com/oa/api/lilanzimuser.ashx',
         method: 'GET',
         params: {
             apptoken: apptoken
         }
-
     })
 }
-export function bill_get_expense_wldw() {
-    return axios({
+export function bill_get_expense_wldw({keyword ="", page,limit} = {}) {
+    return axiosSilent({
         url: url + "/getWldwByKhid",
         method: "POST",
         params: {
             data: {
-                // khid: store.getters.activeAccount.khid
-                khid:0
+                khid: store.getters.activeAccount.khid,
+                "findName": keyword,
+                page: page,
+                limit: limit,
             }
         }
     })
 }
+export function bill_add_get_wldw_by_name(zhmc) { 
+    return axiosSilent({
+        url: url + '/getWldwSkzhByKhidAndZhmc',
+        method: 'POST',
+        data : {
+            data: {
+                khid: store.getters.activeAccount.khid,
+                zhmc: zhmc,
+            }
+        }
+    })
+}
+
 export function bill_set_data(data) {
     var formData = {
         // "wdpId": 140,
@@ -143,10 +158,12 @@ export function bill_get_department({
     })
 
 }
-export function account_get_danjuList({
+export function account_get_list({
     status,
     group,
-    zhbj
+    zhbj,
+    page,
+    limit
 }) {
     return axios({
         url: url + '/getFyList',
@@ -158,7 +175,8 @@ export function account_get_danjuList({
                 status: status,
                 group: group,
                 zhbj: zhbj,
-                
+                page,
+                limit
             }
         }
     })
@@ -211,11 +229,8 @@ export function skzh_get_list() {
         method: 'POST',
         data: {
             data: {
-                // khid: store.getters.userinfo.id
                 khid: store.getters.activeAccount.khid,
                 "tzid": store.getters.activeAccount.khid,
-
-                // khid: 9
             }
         }
     })
@@ -227,7 +242,7 @@ export function skzh_del_by_id(id){
         data: {
             data: {
                 "tzid": store.getters.activeAccount.khid,
-                id
+                id: id
             }
         }
     })
@@ -238,12 +253,8 @@ export function skzh_get_by_id(id) {
         method: 'POST',
         data: {
             data: {
-                // khid: store.getters.userinfo.id
-                // khid: store.getters.activeAccount.khid,
                 id: id,
                 "tzid": store.getters.activeAccount.khid,
-
-                // khid: 9
             }
         }
     })
@@ -257,7 +268,9 @@ export function parse_info_from_base64(base64Str) {
         method: 'POST',
         data: {
             base64Str: base64Str
-        }
+        },
+        timeout: 25000,
+        timeoutErrorMessage: '上传超时, 请稍候再试!'
     })
 }
 
@@ -308,7 +321,7 @@ export function skzh_set_skzh_or_wldw(data, is_wldw = false) {
         "khss": data.khss,
         "fzh": data.fzh,
         "zhbj": is_wldw? 1 : 2,
-        "zhlx": is_wldw? 0 : 1
+        "zhlx": is_wldw? 2 : 1
     }
     if(data.update_id) {
         formData.id = data.update_id

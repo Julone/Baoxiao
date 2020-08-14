@@ -1,56 +1,61 @@
 <template>
     <div class="fengtang-container" :style="{height: app_height +'px'}">
-        <van-nav-bar title="分摊金额" fixed placeholder style="height:10vw" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
+        <van-nav-bar title="分摊金额" placeholder style="height:10vw" left-text="返回" left-arrow
+            @click-left="$store.dispatch('appGoback')" />
         <div class="main" ref="main">
-       
-                <van-cell class="sticky" style="top:10vw">
-                    <template #title>
-                        <div>
-                            1条费用,金额 ￥{{ft_money}}
-                        </div>
-                    </template>
-                    <a class="blue-text" @click="avgMoney"> 平均分摊</a>
-                </van-cell>
-     
-            <van-form ref="form" :show-error="show_error"  :show-error-message="show_error">
-            
-                <div style="width: 100%" v-for="(el,index) in fentang_list" :key="el.id">
-                    <div class="ft_title"><span>分摊({{index+1}}) </span>
-                        <van-button size="small" bgless borderless>
-                            <van-icon size="16" name="delete" @click="remove_item(index)" />
-                        </van-button>
+            <van-cell class="sticky" style="top:0">
+                <template #title>
+                    <div>
+                        1条费用,金额 ￥{{ft_money}}
                     </div>
-                    <van-field v-model="el.cdje" label="承担金额" clickable required
-                        :rules="[{ required: true, message: '请输入承担金额' }]">
-                        <template #input>
-                            <div class="bcdp-item">
-                                <div class="bcdp-item-left">
-                                    <span>CNY</span>
-                                    <input type="number" step="0.01" placeholder="请输入承担金额" v-model="el.cdje">
+                </template>
+                <a class="blue-text" @click="avgMoney"> 平均分摊</a>
+            </van-cell>
+
+            <van-form ref="form" :show-error="false" :show-error-message="show_error" novalidate>
+                <transition-group name="van-fade">
+                    <div style="width: 100%" v-for="(el,index) in fentang_list" :key="el.id">
+                        <div class="ft_title"><span>分摊({{index+1}}) </span>
+                            <van-button size="small" bgless borderless icon="delete" @click="remove_item(index)">
+                            </van-button>
+                        </div>
+                        <van-field v-model="el.cdje" label="承担金额" clickable required :rules="regRules.money">
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <div class="bcdp-item-left">
+                                        <span>CNY</span>
+                                        <input type="number" step="0.01" placeholder="请输入承担金额" v-model="el.cdje">
+                                    </div>
+                                    <a class="blue-text" @click="fill_money(el,index)"><small>填充金额</small></a>
                                 </div>
-                                <a class="blue-text" @click="fill_money(el,index)"><small>填充金额</small></a>
-                            </div>
-                        </template>
-                    </van-field>
-                    <van-field v-model="el.cdbl" label="承担比例" type="number" clickable required
-                        :rules="[{ required: true, message: '请输入承担比例' }]">
-                        <template #input>
-                            <input type="number" borderless v-model="el.cdbl" min="0" max="100" step="10"
-                                @blur="changePercent(el)" style="width:80px;" />
-                            <span style="margin-left:10px">%</span>
-                        </template>
-                    </van-field>
-                    <van-field v-model="el.cdbm.name" label="承担部门" clickable required placeholder="请选择承担部门"
-                        :rules="[{ required: true, message: '请选择承担部门',trigger: 'onChange' }]" is-link readonly
-                        @click="selectStart(el)">
-                    </van-field>
-                </div>
+                            </template>
+                        </van-field>
+                        <van-field v-model="el.cdbl" label="承担比例" type="number" clickable required
+                            :rules="regRules.percent">
+                            <template #input>
+                                <div v-if="!el.focus && el.cdbl" @click="onCdblClick(el)" w100>
+                                    {{el.cdbl}}%
+                                </div>
+                                <input class="cdbl_input" ref="cdbl_input" v-if="el.focus || !el.cdbl" type="number"
+                                    placeholder="请输入承担比例" borderless v-model.lazy="el.cdbl" min="0" max="100" step="10"
+                                    @blur="changePercent(el)" w100 />
+                            </template>
+                        </van-field>
+                        <van-field v-model="el.cdbm.name" label="承担部门" clickable required placeholder="请选择承担部门"
+                            :rules="[{ required: true, message: '请选择承担部门',trigger: 'onChange' }]" is-link readonly
+                            @click="selectStart(el)">
+                        </van-field>
+                    </div>
+                </transition-group>
+
                 <van-row class="marginTop">
                     <van-col span="12" class="border-right">
-                        <van-button native-type="button" type="danger" @click="removeAll" plain borderless block>删除全部</van-button>
+                        <van-button native-type="button" type="danger" @click="removeAll" plain borderless block>删除全部
+                        </van-button>
                     </van-col>
                     <van-col span="12">
-                        <van-button native-type="button" type="info" @click="addFengtang" plain borderless block>添加分摊</van-button>
+                        <van-button native-type="button" type="info" @click="addFengtang" plain borderless block>添加分摊
+                        </van-button>
                     </van-col>
                 </van-row>
             </van-form>
@@ -70,14 +75,7 @@
                 </van-row>
             </div>
         </div>
-        <!-- <transition name="van-slide-right">
-            <div class="erji-view" v-if="isOpenErji">
-                <keep-alive>
-                    <router-view @select_dept="select_dept"></router-view>
-                </keep-alive>
-            </div>
-        </transition> -->
-         <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
             <transition name="van-fade">
                 <router-view @select_dept="select_dept"></router-view>
             </transition>
@@ -98,22 +96,22 @@
         data() {
             return {
                 fentang_list: [],
-                ft_money: this.formdata.bcdp,
+                ft_money: this.formdata.bcdp || 0,
                 activeItem: -1,
                 show_error: true
             }
         },
         props: ['formdata'],
         computed: {
-            ...mapGetters(['app_height']),
+            ...mapGetters(['app_height', 'regRules']),
             isOpenErji() {
                 return this.$route.name != 'bill_add_fentang'
             },
-             isErjiRoute:{
-                get(){
+            isErjiRoute: {
+                get() {
                     return this.$route.name != 'bill_add_fentang'
                 },
-                set(val){}
+                set(val) {}
             },
             curSum() {
                 return this.fentang_list.reduce((t, el) => {
@@ -124,13 +122,15 @@
         },
         created() {
             this.fentang_list = Array.from(this.formdata.ft_info);
-            if(this.fentang_list == 0) {
+            if (this.fentang_list == 0) {
                 this.addFengtang();
             }
         },
         methods: {
-            onCd(){
-                alert(1)
+            async onCdblClick(el) {
+                el.focus = true;
+                await this.$nextTick();
+                this.$refs.cdbl_input && this.$refs.cdbl_input[0].focus();
             },
             onSave() {
                 this.show_error = true;
@@ -141,10 +141,11 @@
                 }
             },
             changePercent(item) {
+                item.focus = false;
+                item.cdbl = Number(item.cdbl);
                 item.cdje = (this.ft_money * 0.01 * item.cdbl).toFixed(2);
             },
             select_dept(dept) {
-                console.log(dept);
                 if (this.activeItem == -1) this.$store.dispatch('appGoback');
                 this.activeItem.cdbm = dept;
                 this.$store.dispatch('appGoback')
@@ -196,9 +197,9 @@
                     this.$toast('合计金额不能超过总金额');
                     return false;
                 };
-                var el = this.fentang_list.filter(el=>!el.cdbm.id);
-                if(el.length) {
-                      this.$toast('请选择承担部门');
+                var el = this.fentang_list.filter(el => !el.cdbm.id);
+                if (el.length) {
+                    this.$toast('请选择承担部门');
                     return false;
                 }
                 return true;
@@ -209,11 +210,13 @@
                     return el;
                 })
             },
-             addFengtang() {
+            addFengtang() {
                 this.fentang_list.push({
                     cdje: 0,
-                    cdbl: 0,
-                    cdbm: { }
+                    cdbl: '',
+                    cdbm: {},
+                    focus: false,
+                    id: +new Date()
                 });
                 this.show_error = false
             }
@@ -225,10 +228,12 @@
     .fengtang-container {
         overflow: auto;
         background-color: rgb(240, 242, 245);
-        &>*{
-        z-index: 100000;
+
+        &>* {
+            z-index: 100000;
 
         }
+
         .bcdp-item {
             width: 100%;
             .flex(@j: space-between);
@@ -246,6 +251,12 @@
             color: gray;
             font-size: 12px;
             .flex(@j: space-between);
+        }
+
+        .cdbl_input {
+            &::placeholder {
+                color: rgb(202, 203, 206);
+            }
         }
 
         .main {

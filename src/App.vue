@@ -46,7 +46,8 @@ export default {
     }
   },
   created(){
-    this.$store.dispatch('appStart')
+    console.log(this.$route)
+   
   },
   mounted(){
     this.onAppResize();
@@ -69,7 +70,8 @@ body{
   background-color: rgb(240,242,245);
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
-  
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #app{
