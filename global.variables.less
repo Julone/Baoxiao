@@ -2,9 +2,13 @@
 @nav-bar-background-color: #f7f8fa;
 @nav-bar-height: 38px;
 @nav-bar-title-font-size: 15px;
+// @nav-bar-background-color: @j_main_color;
+// @nav-bar-title-text-color: white;
+// @nav-bar-icon-color: white;
+// @nav-bar-text-color: white;
 @j_main_color:#1989fa;
 @j_danger_color:#f56666;
-@j_main_color:#1989fa;
+@j_success_color: rgb(7,193,96);
 @app_bg_color:rgb(240,242,245);
 //函数
 .flex(@j:center;@a:center;@w:nowrap;@d:row;@f:flex){
@@ -35,4 +39,7 @@
     text-overflow: ellipsis;
     -webkit-line-clamp: @rows;
     -webkit-box-orient: vertical;
+}
+.border(@d:bottom){
+    border-@{d}:1px solid #ebedf0;
 }

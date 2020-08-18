@@ -1,5 +1,5 @@
-import store from '@/store'
-export const dateFormat = function (time, fmt) {
+import store from '@/store';
+export const dateFormat = function (time, fmt = 'yyyy-MM-dd') {
     time = time instanceof Date ?  time : new Date(time);
     var o = {
         "M+": time.getMonth() + 1, //月份 
@@ -77,4 +77,28 @@ export const addScript = function(url, callback){
     script.src = url;
     script.onload = callback;
     document.head.appendChild(script);
+}
+
+export const dialogConfirm = (callback, options = {}) => {
+   return function(){
+        var _this = this;
+        var arg = arguments
+        _this.$dialog.confirm({
+                title: options.title || '删除',
+                message: options.message || '是否删除?',
+        }).then(r=> {
+            callback.apply(_this,arg);
+        }).catch(e=>{
+            console.log(e)
+        })
+   }
+}
+export const copyText = (data="", trim = false) => {
+    let url = trim? data.trim(): data;
+    let oInput = document.createElement('input');
+    oInput.value = url;
+    document.body.appendChild(oInput);
+    oInput.select(); // 选择对象;
+    document.execCommand("Copy"); // 执行浏览器复制命令
+    oInput.remove()
 }

@@ -1,13 +1,8 @@
-export default {
+export default [{
     path: '/bill/get',
-    name: 'bill_get',
-    component: ()=>import('./../router-view.vue'),
+    name:'bill_get_new',
+    component: () => import('@/views/Bill_Get/Bill_Get.vue'),
     children: [
-      {
-        path: '',
-        name:'bill_get_new',
-        component: () => import('@/views/Bill_Get/Bill_Get.vue'),
-        children:[
           {
             name: 'bill_get_dept',
             path: 'bill_get_dept',
@@ -34,15 +29,14 @@ export default {
             name: 'bill_get_jiekuandan',
             path: 'bill_get_jiekuandan',
             component: () => import('@/views/Bill_Get/Bill_Get_JieKuanDan.vue')
-          }
+          },
           
-        ]
-      },
-      {
-        path: 'type',
-        name:'bill_get_danju_type',
-        component: () => import('@/views/Bill_Get/Bill_Get_DanjuType.vue'),
-      },
-    
     ]
-  }
+  },
+
+  {
+    path: '/bill/get_type',
+    name:'bill_get_danju_type',
+    component: () => import('@/views/Bill_Get/Bill_Type.vue'),
+  },
+]

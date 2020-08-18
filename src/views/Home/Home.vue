@@ -4,7 +4,7 @@
       <div class="h_title">
         <div transparent>LILANZ</div>
         <span>首页</span>
-        <accountPicker  white size="mini" ></accountPicker></div>
+        <accountPicker class="account-picker" white size="mini" ></accountPicker></div>
 
       <div class="h_button_group">
         <div class="h_button" @click="onHbtnClick(el)" v-for="el in h_button" :key="el.icon">
@@ -56,14 +56,14 @@
             icon: 'bill',
             label: '提单据',
             to: {
-              path: '/bill/get/type'
+              path: '/bill/get_type'
             }
           }
         ]
       }
     },
     created(){
-     this.$store.dispatch('appStart', this.$route.query.apptoken);
+       this.$store.dispatch('appStart', this.$route.query.apptoken);
     }
   }
 </script>
@@ -74,17 +74,21 @@
       color: white;
 
       .h_title {
-        .flex(@j:space-between);
-        padding: 10px 10px 5px;
+        .flex(@j:center);
+        padding: 10px 15px 5px;
         font-weight: 700;
         letter-spacing: 2px;
         font-size: 14px;
         position: relative;
+       
         & > div{
           flex: 1;
         }
+        .account-picker{
+          text-align: right;
+        }
         &>span{
-          flex:4;
+          flex:1;
           text-align: center;
         }
       }

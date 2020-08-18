@@ -10,7 +10,7 @@ import wode from './module/wode';
 import others from './module/others'
 
 Vue.use(VueRouter);
-const routes = [ home, account, shenpi, wode, bill_add, bill_get,...others ];
+const routes = [ home, account, shenpi, wode, bill_add, ...bill_get,...others ];
 const originalPush = VueRouter.prototype.push
 VueRouter.prototype.push = function push(location) {
   return originalPush.call(this, location).catch(err => err)
@@ -28,7 +28,7 @@ router.beforeEach((to,from,next) => {
   next();
 })
 router.afterEach((to,from) => {
-   if( !to.meta.savedPosition && !to.meta.noAutoScrollTop) {
+  if( !to.meta.savedPosition && !to.meta.noAutoScrollTop) {
     window.scrollTo(0,0)
   }
 })

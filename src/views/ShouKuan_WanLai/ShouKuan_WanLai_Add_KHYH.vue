@@ -7,7 +7,7 @@
                 <van-search v-model="keyword" @input="onSearch()" placeholder="输入关键字查询" />
                 <van-list v-model="loading" :finished="finished" finished-text="没有更多了" @load="onLoad"
                     :error.sync="error" error-text="请求失败，点击重新加载">
-                    <van-cell v-for="el in list" :key="el.yhlb" clickable :is-link="false" :title="el.yhname"
+                    <van-cell v-for="el in yh_list" :key="el.yhlb" clickable :is-link="false" :title="el.yhname"
                         @click="$emit('choose_khyh',el)" :label="el.khyh" />
                 </van-list>
             </div>
@@ -36,7 +36,10 @@
         },
 
         computed: {
-            ...mapGetters(['app_height'])
+            ...mapGetters(['app_height']),
+            yh_list(){
+                return this.list.filter(el => el.yhname.includes(this.keyword))
+            }
         },
         methods: {
             onLoad() {
@@ -48,6 +51,8 @@
                         } else {
                             this.finished = true;
                         }
+                            this.finished = true;
+
                     } else {
                         this.error = true;
                     }
@@ -58,8 +63,8 @@
                 })
             },
             onSearch(){
-                this.list = [];
-                this.onLoad();
+                // this.list = [];
+                // this.onLoad();
             }
         },
         created() {

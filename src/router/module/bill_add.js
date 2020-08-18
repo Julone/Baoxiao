@@ -1,7 +1,7 @@
 export default {
     path: '/bill/add',
     name: 'bill_add',
-    alias: ['/bill/edit'],
+    alias: ['/account/bill/edit','/account/bill/add'],
     component: () => import('@/views/Bill_Add/Bill_Add.vue'),
     children: [
         {
@@ -15,7 +15,7 @@ export default {
         component: () => import('@/views/Bill_Add/Bill_Add_Hexiao.vue')
         },
         {
-        name: 'bill_add_wanlai_danwei',
+        // name: 'bill_add_wanlai_danwei',
         path: 'wanlai_danwei',
         component: () => import('@/views/ShouKuan_WanLai/WanLaiDanWei.vue')
         },

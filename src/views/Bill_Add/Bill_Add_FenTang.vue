@@ -1,6 +1,6 @@
 <template>
-    <div class="fengtang-container" :style="{height: app_height +'px'}">
-        <van-nav-bar title="分摊金额" placeholder style="height:10vw" left-text="返回" left-arrow
+    <div class="fengtang-container" ref="ftContainer" :style="{height: app_height +'px'}">
+        <van-nav-bar title="分摊金额" placeholder left-text="返回" left-arrow
             @click-left="$store.dispatch('appGoback')" />
         <div class="main" ref="main">
             <van-cell class="sticky" style="top:0">
@@ -13,7 +13,7 @@
             </van-cell>
 
             <van-form ref="form" :show-error="false" :show-error-message="show_error" novalidate>
-                <transition-group name="van-fade">
+                <transition-group name="van-slide-right">
                     <div style="width: 100%" v-for="(el,index) in fentang_list" :key="el.id">
                         <div class="ft_title"><span>分摊({{index+1}}) </span>
                             <van-button size="small" bgless borderless icon="delete" @click="remove_item(index)">
@@ -92,6 +92,7 @@
         accMul,
         accDiv
     } from './../../utils/math';
+    import {dialogConfirm} from './../../utils/utils'
     export default {
         data() {
             return {
@@ -104,12 +105,9 @@
         props: ['formdata'],
         computed: {
             ...mapGetters(['app_height', 'regRules']),
-            isOpenErji() {
-                return this.$route.name != 'bill_add_fentang'
-            },
             isErjiRoute: {
                 get() {
-                    return this.$route.name != 'bill_add_fentang'
+                    return this.$route.path.startsWith('/bill/add/fentang/')
                 },
                 set(val) {}
             },
@@ -156,9 +154,9 @@
                     path: this.$route.path + '/bill_add_dept'
                 });
             },
-            remove_item(index) {
+            remove_item: dialogConfirm(function(index) {
                 this.fentang_list.splice(index, 1);
-            },
+            }),
             fill_money(el, index) {
                 var leftMoney = this.fentang_list.reduce((t, el, i) => {
                     if (index != i) t = accSub(t, el.cdje);
@@ -167,9 +165,9 @@
                 this.fentang_list[index].cdje = leftMoney;
                 this.updateRate();
             },
-            removeAll() {
+            removeAll: dialogConfirm(function() {
                 this.fentang_list = [];
-            },
+            }, {title: '删除全部',message: '是否删除全部?'}),
             avgMoney() {
                 var leftMoney = this.ft_money;
                 var leftRate = 100;
@@ -210,7 +208,7 @@
                     return el;
                 })
             },
-            addFengtang() {
+            async addFengtang() {
                 this.fentang_list.push({
                     cdje: 0,
                     cdbl: '',
@@ -218,7 +216,9 @@
                     focus: false,
                     id: +new Date()
                 });
-                this.show_error = false
+                this.show_error = false;
+                await this.$nextTick();
+                this.$refs.ftContainer.scrollBy({left:0,top:400,behavior:'smooth'})
             }
         }
 

@@ -1,6 +1,6 @@
 <template>
     <div class="bill_get__container">
-        <van-nav-bar title="新建通用报销单" fixed placeholder style="height:10vw" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
+        <van-nav-bar :title="'新建' + bill_type.mc" fixed placeholder left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="mainContent" ref="mainContent" >
             <van-form v-if="initOK" ref="form" @submit="onSubmit">
             <van-field v-model="form.bxsy" clickable name="bxsy" required is-link label="报销事由" placeholder="请输入报销事由"
@@ -135,7 +135,7 @@
                 </keep-alive>
             </div>
         </transition> -->
-        <van-popup :overlay="false" get-container="body" erji-view v-model="isErjiRoute" :lock-scroll="!isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" get-container="body"  v-model="isErjiRoute" :lock-scroll="!isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
             <transition name="van-fade">
                 <keep-alive>
                 <router-view @select_dept="select_dept" @select_skzh="select_skzh" @select_minxi="select_minxi"></router-view>
@@ -171,12 +171,14 @@
         computed: {
             isErjiRoute:{
                 get(){
-                    return this.$route.name != 'bill_get_new'
+                    return this.$route.path.startsWith('/bill/get/')
                 },
                 set(val){}
-             
             },
-            ...mapGetters(['app_height']),
+            ...mapGetters(['app_height','bill_get_type']),
+            bill_type(){
+                return this.bill_get_type(this.$route.query.id);
+            }
         },
         watch: {
             isErjiRoute: {
@@ -192,6 +194,10 @@
                 this.$router.push({
                     name: 'bill_get_new'
                 })
+            }
+            if(!this.bill_type) {
+                this.$toast.fail('请先选择单据类型!')
+                this.$router.push('/bill/get_type');
             }
         },
         methods: {

@@ -2,7 +2,7 @@
     <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
         <van-nav-bar title="往来单位" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')">
             <template #right>
-                <van-button @click="show_wldw = true" icon="plus" size="small" bgless borderless>添加</van-button>
+                <van-button @click="show_wldw = true" color="white" icon="plus" size="small" bgless borderless>添加</van-button>
             </template>
         </van-nav-bar>
         <van-search v-model="keyword" placeholder="请输入往来单位关键词" @search="onSearch" @input="onSearch" />
@@ -24,7 +24,7 @@
                                 <!-- <van-icon name="shop-o" /> -->
                                 <!-- <van-icon name="hotel-o" /> -->
                                 <!-- <van-icon name="column" /> -->
-                                   <van-icon name="hotel-o" size="21"/><span>{{el.zhmc}}</span>
+                                <van-icon name="hotel-o" size="21"/><span>{{el.zhmc}}</span>
                             </div>
                         </template>
                         <template #extra>
@@ -32,6 +32,7 @@
                                 <van-icon name="success" />
                             </div>
                         </template>
+               
                 </van-cell>
                 <template #right>
                     <van-button square type="danger" @click="onDelete(el.id, index)" text="删除" />
@@ -128,7 +129,7 @@
             },
             onCellClick(el){
                 if(this.isEditMode) {
-                    return ;
+                    return;
                 } 
                 this.$emit('chooseWldw',el)
             },

@@ -4,7 +4,7 @@
         <div class="main-content">
             <van-collapse v-model="activeCollpase" style="width:100%">
                 <van-collapse-item v-for="el in collapseList" :key="el.title" :title="el.title" :name="el.id">
-                    <van-cell v-for="d in el.children" :key="d.id" :to="{name: 'bill_get_new', query:{djlx: d.id}}"
+                    <van-cell v-for="d in el.children" :key="d.id" :to="{name: 'bill_get_new', query:{id: d.id}}"
                         is-link>
                         <van-button type="info" size="mini" icon="balance-list-o"></van-button>
                         {{d.mc}}
@@ -19,37 +19,33 @@
         bill_get_ywcj
     } from 'api'
     import {
-        mapGetters
+        mapGetters,
+        mapState
     } from 'vuex'
 
     export default {
         data() {
             return {
                 activeCollpase: [],
-                collapseList: []
+                // collapseList: []
             }
         },
+        computed: {
+            ...mapState({
+                collapseList: state => state.bill_get.danju_type
+            }),
+            ...mapGetters(['bill_get_type']),
+        },
+        methods: {
+            
+
+        },
+
   
         created() {
-            this.collapseList = [{
-                    title: '通用报销单',
-                    id: 1,
-                    children: [{
-                            id: 1001,
-                            mc: '通用报销单'
-                        }
-                    ]
-                }, {
-                    title: '对公报销单',
-                    id: 2,
-                    children: [
-                        {
-                            id: 1002,
-                            mc: '对公报销单'
-                        },
-                    ]
-                }
-            ];
+            console.log(this.bill_get_type(1001));
+            // this.collapseList = [
+            // ];
             this.activeCollpase = this.collapseList.map(el=>el.id);
         }
     }

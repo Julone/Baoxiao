@@ -13,16 +13,18 @@ export default {
     },
     actions:{
         ywcj_get_ywcl_list({state,commit, dispatch}, val){
-            return bill_get_ywcj().then(r=>{
-                if(r.errcode == 0) {
-                    commit('SET_YWCJ_LIST',r.data );
-                    return true;
-                }else {
+            if(state.ywcjList.length == 0) {
+                return bill_get_ywcj().then(r=>{
+                    if(r.errcode == 0) {
+                        commit('SET_YWCJ_LIST',r.data );
+                        return true;
+                    }else {
+                        return false;
+                    }
+                }).catch(e => {
                     return false;
-                }
-            }).catch(e => {
-                return false;
-            })
+                })
+            }
         }
     },
     getters: {

@@ -2,10 +2,10 @@
     <div class="expense-type-container" :style="{height: app_height +'px'}">
         <van-nav-bar title="费用类型" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')">
             <template #right>
-                <van-icon name="search" @click="showSearch =!showSearch" size="18" />
+                <!-- <van-button size="small" type="info" plain bgless borderless @click="onRefresh">刷新</van-button> -->
             </template>
         </van-nav-bar>
-        <van-search v-model="qs" v-if="showSearch" placeholder="请输入搜索关键词" @search="onSearch" @input="onSearch" />
+        <van-search v-model="qs" placeholder="请输入关键词" @search="onSearch" @input="onSearch" />
         <div class="recent-pick">
             <div class="title">最近使用</div>
             <div class="content">
@@ -13,39 +13,43 @@
                  <van-tag plain v-for="el in recentList" :key="el.id" @click="onTypeClick(el)" size="medium">
                     {{el.fylxmc}}</van-tag>
                 </template>
-                <van-divider v-else>暂无数据</van-divider>
-                
             </div>
         </div>
 
         <div class="main-content" v-if="!qs">
-            <van-sidebar v-model="activeKey">
-                <van-sidebar-item v-for="el in slidebar" :key="el" :title="el" />
+            <van-sidebar class="side-left" v-model="activeKey">
+                <van-sidebar-item v-for="(el,i) in slidebar" :key="el" :title="i + 1 +' '+ el" @click="goTo(i)"/>
             </van-sidebar>
-            <div class="side-right">
-                <van-cell v-for="el in curTypeList" :key="el.id" @click="onTypeClick(el)" :title="el.fylxmc"
+            <div class="side-right" @scroll="onScroll" @touchmove="onTouchEnd">
+                <!-- curTypeList -->
+                <!-- {{typeList}} -->
+                <div v-for="(ele,index) in typeList" :key="index">
+                    <div w100 class="sub_title " :class="{fixed:activeKey == index}" >{{ele[0].fydlmc}}</div>
+    <van-cell v-for="el in ele" :key="el.id" @click="onTypeClick(el)"  :title="el.fylxmc"
                     :class="{isSelected: selectedItem.id == el.id}">
                     <template #right-icon class="flex">
                         <van-icon name="success" style="top:1.5vw" v-if="selectedItem.id == el.id" />
                         <div style="margin-left: 10px;">
-                            <van-tag plain type="primary" v-if="el.dgbs == 0">个人</van-tag>
+                            <van-tag plain type="success" v-if="el.dgbs == 0">个人</van-tag>
                             <van-tag plain type="warning" v-if="el.dgbs == 1">对公</van-tag>
-                            <van-tag plain type="success" v-if="el.dgbs == 2">全部</van-tag>
+                            <van-tag plain type="primary" v-if="el.dgbs == 2">全部</van-tag>
                         </div>
                     </template>
                 </van-cell>
+                </div>
+            
             </div>
         </div>
         <div class="main-content" v-if="qs">
-            <div style="width:100%;height: 100%; overflow: auto;">
+            <div style="width:100%;height: 100%; overflow: auto;" >
                 <van-cell v-for="el in queryList" :key="el.id" @click="onTypeClick(el)" :title="el.fylxmc"
                     :class="{isSelected: selectedItem.id == el.id}">
                     <template #right-icon class="flex">
                         <van-icon name="success" style="top:1.5vw" v-if="selectedItem.id == el.id" />
                         <div style="margin-left: 10px;">
-                            <van-tag plain type="primary" v-if="el.dgbs == 0">个人</van-tag>
+                            <van-tag plain type="success" v-if="el.dgbs == 0">个人</van-tag>
                             <van-tag plain type="warning" v-if="el.dgbs == 1">对公</van-tag>
-                            <van-tag plain type="success" v-if="el.dgbs == 2">个人/对公</van-tag>
+                            <van-tag plain type="primary" v-if="el.dgbs == 2">全部</van-tag>
                         </div>
                     </template>
                 </van-cell>
@@ -65,21 +69,23 @@
         getStorage,
         setStorage
     } from './../../utils/storage'
-
+    import {createNamespacedHelpers} from 'vuex'
+    var {mapState,mapMutations,mapActions}  = createNamespacedHelpers('bill_add/expenseType')
+    // import {debounce, throttle} from 'lodash'
     export default {
         data() {
             return {
-                slidebar: [],
-                typeList: [],
+                // slidebar: [],
+                // typeList: [],
                 activeKey: 0,
                 selectedItem: {},
-                recentList: getStorage({
-                    name: 'recent-xflx-list'
-                }) || [],
+                // recentList: getStorage({
+                //     name: 'recent-xflx-list'
+                // }) || [],
                 qs: '',
                 queryList: [],
-                rowList: [],
-                showSearch: true
+                // rowList: [],
+                objList: {}
             }
         },
         props: ['formdata'],
@@ -87,63 +93,81 @@
             curTypeList() {
                 return this.typeList[this.activeKey]
             },
-            ...mapGetters(['app_height'])
+            ...mapGetters(['app_height']),
+            ...mapState({
+                rowList: s => s.list,
+                recentList: s=>s.recent.filter((el,i) => i < 8)
+            }),
+            typeList(){
+                return Object.values(this.objList);
+            },
+             slidebar(){
+                return Object.keys(this.objList);
+            }
         },
         methods: {
             onSearch() {
-                this.queryList = []
-                this.queryList = this.rowList.reduce((t, el) => {
-                    if (el.fylxmc.includes(this.qs)) {
-                        t.push(el);
-                    }
-                    return t;
-                }, []);;
+                var keyword = this.qs.toUpperCase();
+                this.queryList = this.rowList.filter(el=>{
+                    return el.fylxmc.includes(keyword) || el.pinyin.includes(keyword)
+                })
             },
-
+            ...mapMutations(['SET_RENCENT_XFLX','SET_LIST']),
             onTypeClick(el) {
                 this.$emit('chooseXflx', el);
-                var l = getStorage({
-                    name: 'recent-xflx-list'
-                });
-                if (l) {
-                    var index = l.findIndex(i => i.id == el.id);
-                    if (index != -1) {
-                        l.splice(index, 1)
-                    }
-                    l.unshift(el);
-                    setStorage({
-                        name: 'recent-xflx-list',
-                        content: l
-                    });
-                } else {
-                    setStorage({
-                        name: 'recent-xflx-list',
-                        content: [el]
-                    })
+                this.SET_RENCENT_XFLX(el)
+            },
+            async onRefresh(){
+                console.log('is Refreshing');
+                var rowList = await bill_get_expense_type().then(r => r.data ).catch(e => [])
+                await this.SET_LIST(rowList);
+            },
+            onScroll(e){
+                console.log(e);
+                // console.log(event);
+                // console.log(arguments);
+                var scrollTop= e.target.scrollTop;
+                var offsetTop =e.target.offsetTop;
+                var a = document.querySelectorAll('.side-right .sub_title');
+                var b = [...a].filter( (el,i) =>{
+                    return  el.offsetTop  - offsetTop - el.clientHeight <= scrollTop ;
+                } );
+                if(b.length >= 0){
+                    this.activeKey = b.length - 1;
+                    // document.querySelector('.side-left').scrollTop = document.querySelector('.van-sidebar-item--select').offsetTop - offsetTop;
                 }
-            }
-        },
-        created() {
-            console.log(this.formdata);
-            this.selectedItem = {
-                ...this.formdata.xflx
-            }
-            bill_get_expense_type().then(r => {
-                this.rowList = r.data;
-                var a = r.data.reduce((t, el) => {
-                    var key = el.fydlmc;
-                    if (el.id == this.selectedItem.id) {
-                        this.activeKey = key;
+                console.log(b);
+            },
+            onTouchEnd(){
+                var offsetTop = document.querySelector('.side-left').offsetTop;
+                document.querySelector('.side-left').scrollTop = document.querySelector('.van-sidebar-item--select').offsetTop - offsetTop  - 100;
+            },
+            goTo(i){
+                var container =document.querySelector('.side-right');
+                var a = Array.from(document.querySelectorAll('.side-right .sub_title'))[i]
+                container.scrollTop = a.offsetTop - container.offsetTop;
+            },
+            async handleData(){
+                console.log('is Handling');
+                this.objList = this.rowList.reduce((t, el) => {
+                var key = el.fydlmc;
+                if (el.id == this.selectedItem.id) {
+                    this.activeKey = key;
                     }
                     t[key] ? (t[key].push(el)) : (t[key] = [el]);
                     return t;
                 }, {});
-                this.slidebar = Object.keys(a);
-                this.typeList = Object.values(a);
                 if (this.activeKey != 0) {
                     this.activeKey = this.slidebar.findIndex(el => el == this.activeKey);
                 }
-            })
+            }
+        },
+        async created() {
+            this.selectedItem = { ...this.formdata.xflx }
+            this.handleData();
+        },
+        mounted(){
+            // this.onScroll = throttle(this.onScroll, 1000)
         }
     }
 </script>
@@ -171,19 +195,24 @@
             .title {
                 color: gray;
                 font-size: 10px;
-                 margin-bottom: 6px;
+                margin-bottom: 3px;
                 font-weight: 700;
+                padding-left: 2px;;
             }
 
             .content {
-                overflow: hidden;
-                height: 50px;
-                padding: 1px;
+                overflow-y: hidden;
+                .flex(@w:wrap;@j:flex-start);
+                height: 60px;
+                margin-top: 5px;;
+                padding: 3px 0px 0;
             }
 
             .van-tag {
-                margin-right: 5px;
-                margin-bottom: 7px;
+                margin-right: 8px;
+                margin-bottom: 6px;
+                height: 25px;
+                box-sizing: border-box;
             }
         }
 
@@ -194,20 +223,48 @@
             overflow: hidden;
 
             .van-sidebar {
-                width: 100px;
+                width: 130px;
+                .van-sidebar-item--select::before{
+                    background: @j_main_color;
+                }
+            }
+            .side-left{
+                transition: all ease 1s;
             }
 
             .side-right {
                 width: calc(100vw - 100px);
                 height: 100%;
                 overflow-y: scroll;
-
+                .fixed{
+                    position: sticky;
+                    top: -1px;
+                    z-index: 10;
+                }
+                .sub_title{
+                    padding: 8px 10px;
+                    background: #f8f8f8;
+                    .flex(@j:flex-start);
+                    letter-spacing: 1px;
+                    box-sizing: border-box;
+                    // position: relative;
+                    &::before{
+                        content: '';
+                        width: 5px;
+                        height: 15px;
+                        background: @j_main_color;
+                        display: inline-block;
+                        // position: absolute;
+                        margin-right: 8px;
+                    }
+                }
                 .van-cell__title {
                     padding-left: 10px;
                 }
 
                 .isSelected {
-                    color: red
+                    color:  @j_main_color;
+                    background: #e6f3ff;
                 }
             }
 

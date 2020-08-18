@@ -3,14 +3,22 @@
         <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
             <div style="width: 100%">
-                <van-cell v-for="el in list" :key="el.id" clickable :is-link="false" :title="el.fylxmc"
-                    @click="chooseItem(el)" :label="el.khyh" >
+                <van-cell v-for="el in list" :key="el.id" clickable :is-link="false"
+                :label="el.fydlmc"
+                 :title="el.fylxmc" 
+                    @click="chooseItem(el)"  >
                     <van-icon color="red" v-if=" el.checked" name="success" />
-                    ￥{{el.je | moneyFormat }}
+                    <div class="money_date">
+                        <span class="money">
+                              <small>￥</small>{{el.je | moneyFormat }}
+                        </span>
+                        <small>
+                    {{$options.filters.date(el.rq)}}
+                        </small>
+                    </div>
                 </van-cell>
             <van-empty v-if="list.length == 0">暂无核销费用</van-empty>
             </div>
-
         </div>
         <div class="van-tabbar--fixed bottom_saved_buttons">
             <van-row>
@@ -62,6 +70,7 @@
                     })
                 }
             })
+            console.log(this.$options);
             
             console.log(this.$route);
         },
@@ -85,7 +94,18 @@
             .flex(@a: strech);
             flex: 1;
             height: 100%;
-            overflow: scroll;
+            overflow: auto;
+            .van-cell{
+                .border(bottom);
+                .money_date{
+                .flex(@d:column;@a:flex-end;@f:inline-flex);
+                .money{
+                    color: black
+                }
+            }
+            line-height: 16px;
+            }
+            
         }
 
     }

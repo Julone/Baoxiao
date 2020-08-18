@@ -147,6 +147,9 @@ export const clearStorage = (params = {}) => {
   let { type } = params;
   if (type == 'session') {
     window.sessionStorage.clear();
+  }else if(type =='all'){
+    window.sessionStorage.clear();
+    window.localStorage.clear()
   } else {
     window.localStorage.clear()
   }

@@ -35,7 +35,7 @@ axiosBase.interceptors.request.use(config => {
 axiosBase.interceptors.response.use(res => {
   NProgress.done()
   const status = Number(res.status) || 200
-  const errmsg = res.data.errmsg || '请求失败,请稍候再试!';
+  const errmsg = res.data.errmsg || '抱歉, 垃圾服务器崩溃了~';
   const errcode = res.data.errcode;
   if (errcode != 0 || status != 200) {
     

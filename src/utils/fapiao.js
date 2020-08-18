@@ -7,7 +7,7 @@ export default function (ret) {
             right_title2: '未知金额',
             left_title1: '暂无时间',
             left_title2: '暂无单位',
-            invoice_date: "",
+            invoice_date: new Date(),
             invoice_wanlai: "",
             invoice_money: "",
             detail: [],

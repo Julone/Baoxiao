@@ -4,54 +4,13 @@
         <nav class="nav-bar" v-if="!checkMode">
             <div class="left-item">
                 <a class="blue-text" @click="checkMode = true">选择</a>
-                <div class="gray-btn-group" @click="onDrop">
-                    <span>{{ cur_label('status') }}</span>
-                    <span>{{ cur_label('sortable') }}</span>
-                    <span>{{ cur_label('publicType')}}
-                        <van-icon name="arrow-down" /></span>
-                </div>
-                <van-popup v-model="showDrop" position="bottom">
-                    <van-form class="filter-form">
-                        <!-- {{filterOptions}} -->
-                        <van-field name="radio" label="状态">
-                            <template #input>
-                                <van-radio-group v-model="filterOptions.status" direction="horizontal">
-                                    <van-radio v-for="o in filterOptionsLabel.status" :key="o.id" :name="o.id">
-                                        {{o.label}}</van-radio>
-                                </van-radio-group>
-                            </template>
-                        </van-field>
-                        <van-field name="radio" label="排序分组">
-                            <template #input>
-                                <van-radio-group v-model="filterOptions.sortable" direction="horizontal">
-                                    <van-radio v-for="o in filterOptionsLabel.sortable" :key="o.id" :name="o.id">
-                                        {{o.label}}</van-radio>
-                                </van-radio-group>
-                            </template>
-                        </van-field>
-                        <van-field :border="false" name="radio" label="对公对私">
-                            <template #input>
-                                <van-radio-group v-model="filterOptions.publicType" direction="horizontal">
-                                    <van-radio style="padding:10px;" v-for="o in filterOptionsLabel.publicType"
-                                        :key="o.id" :name="o.id">
-                                        {{o.label}}
-                                    </van-radio>
-                                </van-radio-group>
-                            </template>
-                        </van-field>
-                        <div class="bottom_btn">
-                            <van-button @click="resetForm">重置</van-button>
-                            <van-button @click="confirmForm" type="info">确定</van-button>
-                        </div>
-                    </van-form>
-
-                </van-popup>
+                <filterOptionsPicker :filterData="filterOptions" @confirmFilter="confirmFilter"></filterOptionsPicker>
             </div>
             <div class="right-item">
-                <van-button borderless marginless @click="$eventBus.$emit('refreshView')" size="small">
+                <van-button borderless marginless @click="onRefreshView" size="small">
                     <big> <van-icon class="blue-text" name="replay" /></big>
                 </van-button>
-                <van-button borderless marginless :to="{name: 'bill_add'}" size="small">
+                <van-button borderless marginless :to="{path: '/account/bill/add'}" size="small">
                     <big> <van-icon class="blue-text" name="plus" /></big>
                 </van-button>
             </div>
@@ -63,12 +22,14 @@
         </nav>
         <van-pull-refresh v-model="refreshing" success-text="刷新成功" @refresh="onRefresh">
             <!-- <main style="min-height:80vh"> -->
-            <van-list v-model="loading" :finished="finished" finished-text="没有更多了" @load="onLoad" :error.sync="error"
-                error-text="请求失败，点击重新加载" :immediate-check="true">
+            <van-list v-model="loading" :finished="finished" finished-text="没有更多了"
+                @load="onLoad" :error.sync="error" error-text="请求失败，点击重新加载" :immediate-check="true">
                 <van-collapse v-model="activeNames" v-if="accountList.length > 0">
                     <van-collapse-item v-show="acc.children.length" v-for="(acc,index) in accountList" :key="index"
                         :name="index" :title="acc.title">
-                        <van-swipe-cell v-for="(el,i) in acc.children" :key="i" :disabled="checkMode">
+                        <transition-group name="van-slide-left">
+                        
+                        <van-swipe-cell v-for="(el) in acc.children" :key="el.id" :disabled="checkMode">
                             <div class="account-item-container" @click="onItemClick(el,acc, true)">
                                 <div class="account-item">
                                     <div class="left">
@@ -114,14 +75,14 @@
                                 <van-button style="height:100%" square text="复制" type="primary" />
                             </template>
                         </van-swipe-cell>
+                        </transition-group>
+
                     </van-collapse-item>
                 </van-collapse>
-                <!-- <div style="height:400px" v-else></div> -->
-
-                <div v-if="!loading && !refreshing && !error &&  accountList.length == 0"
-                    class="flex marginTop marginBottom" style="padding:0 0 400px;">
-                    <van-empty description="暂无消费记录" />
-                </div>
+                <template #loading>
+                   <van-loading type="spinner" size="24px" />
+                </template>
+                
             </van-list>
             <!-- </main> -->
         </van-pull-refresh>
@@ -149,11 +110,13 @@
                 <router-view></router-view>
             </div>
         </transition> -->
-        <!-- <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }"
+        :lock-scroll="!isErjiRoute" 
+         >
             <transition name="van-fade">
                 <router-view></router-view>
             </transition>
-        </van-popup> -->
+        </van-popup>
     </div>
 </template>
 <script>
@@ -163,7 +126,8 @@
         bill_edit_get_danjuInfo
     } from 'api'
     import {
-        dateFormat
+        dateFormat,
+        dialogConfirm
     } from './../../utils/utils';
     import {
         mapGetters
@@ -174,49 +138,10 @@
                 refreshing: false,
                 loading: false,
                 error: false,
-                showDrop: false,
                 filterOptions: {
                     status: 0,
                     sortable: 1,
                     publicType: 0
-                },
-                filterOptionsLabel: {
-                    status: [{
-                            id: 0,
-                            label: '未报销'
-                        },
-                        {
-                            id: 1,
-                            label: '已报销'
-                        }, {
-                            id: 2,
-                            label: '已移除'
-                        },
-                    ],
-                    sortable: [{
-                            id: 0,
-                            label: '创建时间'
-                        },
-                        {
-                            id: 1,
-                            label: '消费时间'
-                        }, {
-                            id: 2,
-                            label: '费用类型'
-                        },
-                    ],
-                    publicType: [{
-                            id: 0,
-                            label: '全部'
-                        },
-                        {
-                            id: 1,
-                            label: '对公'
-                        }, {
-                            id: 2,
-                            label: '对私'
-                        }
-                    ]
                 },
                 accountList: [],
                 activeNames: [],
@@ -224,21 +149,19 @@
                 isSelectAll: false,
                 rowList: [],
                 page: 1,
-                limit: 3,
+                limit: 25,
                 finished: false
             }
+        },
+        components: {
+            filterOptionsPicker: ()=> import('./../../components/Account_FilterPicker')
         },
         watch: {
             checkMode(nVal, oVal) {
                 this.onSelectAll(false);
-            }
+            },
         },
         computed: {
-            cur_label() {
-                return function (group) {
-                    return this.filterOptionsLabel[group].find(el => el.id == this.filterOptions[group]).label
-                }
-            },
             ...mapGetters({
                 ywcjList: 'ywcjList'
             }),
@@ -248,39 +171,33 @@
             },
             isErjiRoute: {
                 get() {
-                    return this.$route.name != 'account'
+                    return this.$route.path.startsWith('/account/')
                 },
-                set() {}
+                set(val) {}
             },
         },
         methods: {
-            onDelete(id) {
-                this.$dialog.confirm({
-                        title: '删除',
-                        message: '是否删除?',
-                    })
-                    .then(() => {
-                        return bill_del_danju(id).then(r => {
-                            this.$toast.success('删除成功');
-                            // this.silentCheck();
-                            var i = this.rowList.findIndex(el => el.id == id);
-                            if (i != -1) this.rowList.splice(i, 1);
-                        }).catch(e => e).finally(() => {
-                            this.handleData();
-                        })
-                    })
-                    .catch(() => {
-                        // on cancel
-                    });
+            onRefreshView(){
+                this.$route.meta.savedPosition = {x:0,y:0};
+                this.$eventBus.$emit('refreshView');
             },
-
+            onDelete: dialogConfirm(function(id){
+                bill_del_danju(id).then(r => {
+                    this.$toast.success('删除成功');
+                    var i = this.rowList.findIndex(el => el.id == id);
+                    if (i != -1) this.rowList.splice(i, 1);
+                }).catch(e => e).finally(() => {
+                    this.handleViewData();
+                })
+            }),
             onItemClick(el, acc, bool) {
+                console.log(el.checked,acc,bool);
                 if (this.checkMode) {
                     el.checked = !el.checked;
                 } else {
                     if (bool) {
                         this.$router.push({
-                            path: '/bill/edit',
+                            path: '/account/bill/edit',
                             query: {
                                 dj_id: el.id,
                                 from_route: this.$route.name
@@ -289,9 +206,7 @@
                     }
                 }
             },
-            onDrop() {
-                this.showDrop = true;
-            },
+
             onSelectDelete() {
                 this.$dialog.confirm({
                     message: '确定要删除这些费用吗?',
@@ -304,7 +219,6 @@
                     this.checkMode = false;
                 })
             },
-            onSave() {},
             onSelectAll(tag) {
                 this.accountList.forEach((acc) => {
                     acc.children.forEach((child) => {
@@ -313,21 +227,14 @@
                 })
                 this.isSelectAll = tag;
             },
-            resetForm() {
-                this.filterOptions = this.$options.data().filterOptions
-            },
-            confirmForm() {
-                this.showDrop = false
-                this.getData();
+            confirmFilter(newFilter) {
+                this.filterOptions = newFilter;
+                this.refreshing = true;
+                this.onRefresh();
             },
 
-            handleData() {
+            handleViewData() {
                 var data = this.rowList.reduce((t, ele) => {
-                    ele.expenseType = ele.xflx.fylxmc;
-                    ele.money = Number(ele.je).toFixed(2);
-                    ele.checked = false;
-                    ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
-                    ele.icon = 'balance-o';
                     var key = dateFormat(ele.rq, 'yyyy-MM-dd');
                     t[key] ? t[key].children.push(ele) : (t[key] = {
                         title: key,
@@ -337,6 +244,14 @@
                 }, {});
                 this.accountList = Object.values(data);
                 this.activeNames = this.accountList.map((el, i) => i);
+            },
+            handleRowData(ele){
+                ele.expenseType = ele.xflx.fylxmc;
+                ele.money = Number(ele.je).toFixed(2);
+                ele.checked = false;
+                ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
+                ele.icon = 'balance-o';
+                return ele;
             },
             onLoad() {
                 this.getData();
@@ -348,7 +263,7 @@
                 this.loading = true;
                 console.log('刷新中');
                 this.getData().then(r => {
-
+                    
                 }).catch(e => {
 
                 }).finally(() => {
@@ -375,8 +290,9 @@
                     if (r.data.length == 0) {
                         return this.finished = true
                     }
-                    this.rowList.push(...r.data);
-                    this.handleData();
+                    var data = r.data.map(this.handleRowData)
+                    this.rowList.push(...data);
+                    this.handleViewData();
                     this.page = this.page + 1
                     return r;
                 }).catch(e => {
@@ -394,15 +310,15 @@
                     if (i != -1) this.rowList.splice(i, 1);
                 }
                 if (update_id >= 0) {
-                    var newData = await bill_edit_get_danjuInfo(update_id).then(r => r.data)
+                    var newData = await bill_edit_get_danjuInfo(update_id).then(r => this.handleRowData(r.data))
                     var i = this.rowList.findIndex(el => el.id == update_id);
                     if (i != -1) this.rowList.splice(i, 1, newData);
                 }
-                this.handleData();
+                this.handleViewData();
             }
         },
         created() {
-            // this.getData();
+            
         },
         activated() {
             this.silentCheck();
@@ -428,36 +344,17 @@
             border-bottom: 1px solid #e6e6e6;
             // box-shadow: 0px 10px 20px 0px #cfcfcf49;
             .flex(@j: space-between);
+             font-size: 14px;
 
             .gray-btn-group {
                 display: inline-block;
-                font-size: 12px;
+               font-size: 85%;
                 padding: 5px;
                 background: rgb(241, 241, 241);
                 margin-left: 20px;
 
                 span {
                     margin: 0 5px;
-                }
-            }
-        }
-
-        .filter-form {
-            .van-cell {
-                flex-direction: column;
-            }
-
-            .van-cell__title.van-field__label {
-                font-size: 80%;
-            }
-
-            .bottom_btn {
-                .flex(@j: space-between);
-                padding: 10px;
-
-                .van-button {
-                    height: 30px;
-                    width: auto;
                 }
             }
         }
