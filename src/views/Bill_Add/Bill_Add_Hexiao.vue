@@ -1,23 +1,33 @@
 <template>
-    <div class="container" :style="{height: app_height +'px'}">
-        <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
+    <div class="container" :style="{height: appHeight +'px'}">
+        <van-nav-bar title="核销历史未到票费用" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" >
+            <template #right>
+                <accountPicker ></accountPicker>
+            </template>
+        </van-nav-bar>
         <div class="main-content">
-            <div style="width: 100%">
-                <van-cell v-for="el in list" :key="el.id" clickable :is-link="false"
-                :label="el.fydlmc"
+            <div class="contents">
+                 <van-empty :image="error? 'error' : 'search'" @click.native="onLoad" v-if="list.length == 0">
+                     {{error? errmsg : '暂无核销费用'}}
+                     </van-empty>
+                <van-list v-model="loading" :finished="finished" :finished-text="!error? '没有更多了' : ''" @load="onLoad"
+                    :error.sync="error" error-text="" ref="vanlist">
+                    <van-cell class="hexiao-cell" v-for="el in list" :key="el.id" clickable :is-link="false"
+                :label="$options.filters.date(el.rq)"
                  :title="el.fylxmc" 
                     @click="chooseItem(el)"  >
-                    <van-icon color="red" v-if=" el.checked" name="success" />
+                    <van-checkbox shape="square" v-model="el.checked" style="margin-right:10px" slot="icon"/>
                     <div class="money_date">
                         <span class="money">
                               <small>￥</small>{{el.je | moneyFormat }}
                         </span>
                         <small>
-                    {{$options.filters.date(el.rq)}}
+                            <small>剩余金额:</small><small>￥</small>{{el.syje | moneyFormat }}
                         </small>
                     </div>
                 </van-cell>
-            <van-empty v-if="list.length == 0">暂无核销费用</van-empty>
+                </van-list>
+               
             </div>
         </div>
         <div class="van-tabbar--fixed bottom_saved_buttons">
@@ -44,34 +54,43 @@
                 list: [],
                 wdpje: this.formdata.bcdp,
                 zhmc: this.formdata.wanlai_danwei.zhmc,
-                wdp_list: []
+                wdp_list: [],
+                loading: false,
+                finished: false,
+                error: false,
+                errmsg: ''
             }
         },
         props: ['formdata'],
         computed: {
-            ...mapGetters(['app_height'])
+            ...mapGetters(['appHeight'])
         },
         methods: {
             onSave(){
                 this.$emit('chooseHxfy',this.list.filter(el=> el.checked))
             },
             chooseItem(el){
+                console.log(el);
                 el.checked = !el.checked;
-
-            }
-        },
-        created() {
-            var wdp_list = [...this.formdata.wdp_list];
-            bill_get_hexiao({wdpje: this.wdpje,zhmc:this.zhmc}).then(r => {
-                if (r.errcode == 0 && r.data.length) {
+            },
+            onLoad(){
+                var wdp_list = [...this.formdata.wdp_list];
+                bill_get_hexiao({wdpje: this.wdpje,zhmc:this.zhmc}).then(r => {
                     this.list = r.data.map(el => {
                         el.checked = wdp_list.find(w => w.id == el.id)? true:false
                         return el;
                     })
-                }
-            })
+                }).catch(e=>{
+                    this.errmsg = e;
+                    this.error = true;
+                }).finally(()=>{
+                    this.loading =  false,
+                    this.finished=  true
+                })
+            }
+        },
+        created() {
             console.log(this.$options);
-            
             console.log(this.$route);
         },
         
@@ -95,17 +114,11 @@
             flex: 1;
             height: 100%;
             overflow: auto;
-            .van-cell{
-                .border(bottom);
-                .money_date{
-                .flex(@d:column;@a:flex-end;@f:inline-flex);
-                .money{
-                    color: black
-                }
+            div.contents{
+                height: fit-content;
+                padding-bottom: 70px;
+                width: 100%;
             }
-            line-height: 16px;
-            }
-            
         }
 
     }

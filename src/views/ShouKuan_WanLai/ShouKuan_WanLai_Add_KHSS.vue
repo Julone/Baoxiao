@@ -1,6 +1,6 @@
 
 <template>
-    <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
+    <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="城市选择" left-text="返回" left-arrow @click-left="$emit('closed')" />
          <div class="picker">
                <a class="blue-text" @click="back_china">中国大陆</a> <div class="shen" v-if="shen"><van-icon name="arrow" />{{shen}}</div>
@@ -44,7 +44,7 @@
             curTypeList() {
                 return this.typeList[this.activeKey]
             },
-            ...mapGetters(['app_height'])
+            ...mapGetters(['appHeight'])
         },
         methods: {
             back_china(){

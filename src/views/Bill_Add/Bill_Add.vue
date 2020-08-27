@@ -4,14 +4,48 @@
             <van-nav-bar :title="edit_mode?'费用明细':'新建费用'" fixed placeholder left-text="返回" left-arrow
                 @click-left="$store.dispatch('appGoback')">
                 <template #right>
-                    <!-- <accountPicker disabled></accountPicker> -->
+                    <accountPicker zoom=".85"></accountPicker>
                 </template>
             </van-nav-bar>
-            <!-- expense_type -->
-            <van-form ref="form" @submit="onSubmit" novalidate>
+            <van-form ref="form" @submit="onSubmit" novalidate :show-error="false">
+                <van-cell-group v-if="form.cf_list.length || split_id" class="marginBottom">
+                    <div slot="title">
+                        拆分总金额: <small>￥</small>{{split_totalMoney | moneyFormat(2)}}
+                    </div>
+                    <van-cell class="avg_cell" @click="onSplitCellClick(el)" clickable is-link v-for="(el,index) in form.cf_list" :key="el.id" >
+                            <template #icon>
+                                <div style="margin-right: 4px">
+                                    {{index + 1}}. 
+                                </div>
+                            </template>
+                            <template #title>
+                                <div>
+                                    <van-tag type="primary" plain v-if="el.id == update_id"> 正在编辑</van-tag>
+                                    <span v-else> {{el.fylxmc}}</span>
+                                </div>
+                            </template>
+                        <span v-if="el.cfbs == 1">可拆: <small>￥</small>{{el.zje - el.cfje | moneyFormat(2)}}</span>
+                        <span v-if="el.cfbs == 2">{{el.cfje | moneyFormat(2)}}</span>
+                    </van-cell>
+               
+                    <van-cell class="avg_cell" v-if="!isSplitMatched" clickable is-link >
+                            <template #icon>
+                                <div style="margin-right: 4px">
+                                    {{form.cf_list.length + 1}}. 
+                                </div>
+                            </template>
+                            <template #title>
+                                <div>
+                                    <van-tag type="primary" plain > 正在编辑</van-tag>
+                                </div>
+                            </template>
+                    </van-cell>
+              
+                </van-cell-group>
+
                 <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx" class="xflx marginBottom"
                     @click="go2sub({name: 'bill_add_expense_type'})" required :is-link="false" placeholder="请选择消费类型"
-                    left-icon="gold-coin-o" :rules="[{ required: true, message: '请选择消费类型',trigger:'onChange' }]">
+                    left-icon="gold-coin-o" :rules="regRules.expenseType">
                     <template #right-icon>
                         <div>
                             <van-tag plain type="success" v-if="form.xflx.dgbs == 0">个人</van-tag>
@@ -27,20 +61,20 @@
                     </div>
                     <div class="right">
                         <!-- v-if="form.xflx.dgbs == 2" -->
-                        <van-button v-if="form.xflx.dgbs == 2" native-type="button" size="mini" type="info" plain 
-                            @click="form.duisi = !form.duisi" icon="exchange" >
+                        <van-button v-if="form.xflx.dgbs == 2" native-type="button" size="mini" type="info" plain
+                            @click="form.duisi = !form.duisi" icon="exchange">
                             切换为<span>{{form.duisi?'对公业务费用':'个人费用' }}</span>
                         </van-button>
                     </div>
                 </div>
-           
                 <!-- 对私业务 -->
                 <template v-if="form.duisi">
                     <van-field v-model="form.bcdp" label="消费金额" clickable required :rules="regRules.money" name="xfje">
                         <template #input>
                             <div class="bcdp-item">
                                 <span>CNY</span>
-                                <input type="number" step="0.01" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
+                                <input type="number" step="0.01" placeholder="请输入金额" v-model="form.bcdp"
+                                    @blur="onMoneyBlur">
                             </div>
                         </template>
                     </van-field>
@@ -56,15 +90,15 @@
                 <!-- 对公全部到票业务 -->
                 <template v-if="!form.duisi">
                     <van-cell-group>
-                    <van-field v-model="form.ywcj.mc" clickable readonly name="ywcj" @click="ywcjStatus = true" required
-                        is-link label="业务场景" placeholder="请选择业务场景">
-                    </van-field>
-                    <van-popup v-model="ywcjStatus" position="bottom">
-                        <van-picker show-toolbar :columns="ywcjColumns" @confirm="onYwcjConfirm" value-key="mc"
-                            @cancel="ywcjStatus = false">
-                        </van-picker>
-                    </van-popup>
-                </van-cell-group>
+                        <van-field v-model="form.ywcj.mc" clickable readonly name="ywcj" @click="ywcjStatus = true"
+                            required is-link label="业务场景" placeholder="请选择业务场景">
+                        </van-field>
+                        <van-popup v-model="ywcjStatus" position="bottom">
+                            <van-picker show-toolbar :columns="ywcjColumns" @confirm="onYwcjConfirm" value-key="mc"
+                                @cancel="ywcjStatus = false">
+                            </van-picker>
+                        </van-popup>
+                    </van-cell-group>
                     <template v-if="form.ywcj.id == 7184">
                         <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
                             name="xfje">
@@ -95,7 +129,7 @@
                             <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
                                 @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                                :rules="regRules.wanlai_danwei">
                             </van-field>
                         </van-cell-group>
                     </template>
@@ -130,7 +164,7 @@
                             <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
                                 @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
                                 placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                                :rules="regRules.wanlai_danwei">
                             </van-field>
                         </van-cell-group>
                     </template>
@@ -162,34 +196,42 @@
                             </template>
                         </van-field>
                         <van-cell-group :border="false">
-                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable readonly
                                 @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
-                                placeholder="请选择往来单位" readonly
-                                :rules="[{ required: true, message: '请输入往来单位',trigger:'onChange' }]">
+                                placeholder="请选择往来单位" 
+                                :rules="regRules.wanlai_danwei">
                             </van-field>
                         </van-cell-group>
                         <van-cell-group border class="marginTop cell-group marginBottom">
-                            <div class="title">核销历史费用</div>
+                            <div class="title">核销历史费用<span style="font-size:80%" class="right"
+                                    @click="getHexiaoFeiyong()">当前往来单位剩余: ￥{{form.wdpje}} 未到账</span></div>
                             <div class="content" v-if="form.wanlai_danwei.zhmc">
                                 <!-- {{wdp_list}} -->
-                                <van-button @click="open_hexiao()" native-type="button" block
-                                    borderless type="info" plain>选取核销历史费用</van-button>
-                                <div align="center" style="padding-bottom:20px;font-size:80%">当前往来单位下剩余: ￥{{form.wdpje}} 未到账</div>
-                                <div v-if="form.wdp_list.length > 0">
-                                    <van-divider marginless></van-divider>
-                                    <van-swipe-cell  v-for="(el,si) in form.wdp_list" :key="el.id">
-                                        <van-cell class="avg_cell" :title="el.fylxmc" :label="el.fydlmc" >
-                                            ￥{{el.je | money}}
+                                <van-button @click="open_hexiao()" native-type="button" block borderless type="info"
+                                    plain>选取核销历史费用</van-button>
+                                <div v-if="form.wdp_list.length > 0" style="border-top:1px solid #ebedf0">
+                                    <van-swipe-cell v-for="(el,si) in form.wdp_list" :key="el.id">
+                                        <van-cell class="avg_cell hexiao-cell" clickable :is-link="false"
+                                            :label="$options.filters.date(el.rq)" :title="el.fylxmc">
+                                            <div class="money_date">
+                                                <span class="money">
+                                                    <small>￥</small>{{el.je | moneyFormat }}
+                                                </span>
+                                                <small>
+                                                    <small>剩余金额:</small><small>￥</small>{{el.syje | moneyFormat }}
+                                                </small>
+                                            </div>
                                         </van-cell>
                                         <template #right>
-                                            <van-button @click="form.wdp_list.splice(si,1)" h100 square text="删除" type="danger" class="delete-button" />
+                                            <van-button @click="form.wdp_list.splice(si,1)" h100 square text="删除"
+                                                type="danger" class="delete-button" />
                                         </template>
                                     </van-swipe-cell>
                                 </div>
                             </div>
                             <div class="content" v-else>
                                 <div class="hexiao-tip">
-                                    <van-notice-bar color="#1989fa" background="transparent" left-icon="info-o" >      
+                                    <van-notice-bar color="#1989fa" background="transparent" left-icon="info-o">
                                         请先选择到票金额和往来单位!
                                     </van-notice-bar>
                                 </div>
@@ -207,16 +249,18 @@
                 <template v-if="form.ywcj.id != 7185">
                     <!-- 发票 -->
                     <van-cell-group border class="marginTop cell-group">
-                        <div class="title">发票上传 <div class="right" @click="$toast('1.发票上传功能需要选择消费类型\n2.左滑发票可以填充或删除')"><van-icon size="20px" name="info-o" /></div></div>
+                        <div class="title">发票上传 <div class="right" @click="$toast('1.发票上传功能需要选择消费类型\n2.左滑发票可以填充或删除')">
+                                <van-icon size="20px" name="info-o" />
+                            </div>
+                        </div>
                         <div class="content">
-                            <van-uploader :after-read="afterRead" :before-read="beforeRead" accept="image/*" :disabled="uploading || !form.xflx.fylxmc">
-                                <van-button native-type="button" bgless style="width:100%" 
-                                :loading="uploading" loading-text="正在上传中..."
-                                block borderless type="info" plain icon="photograph">上传发票
+                            <van-uploader :after-read="afterRead" :before-read="beforeRead" :disabled="uploading || !form.xflx.fylxmc">
+                                <van-button native-type="button" bgless style="width:100%" :loading="uploading"
+                                    loading-text="正在上传中..." block borderless type="info" plain icon="photograph">上传发票
                                 </van-button>
                             </van-uploader>
-                            <div v-for="el in fp_info" :key="el.id">
-                                <fapiao-item  :fapiao="el" @fp-fill="onFapiaoFill" @fp-delete="onFapiaoDelete" @fp-click="onFapiaoClick" > </fapiao-item>
+                            <div v-for="(el,fi) in fp_info" :key="el.id">
+                                <fapiao-item :fapiao="el" @fp-fill="onFapiaoFill" @fp-delete="onFapiaoDelete(fi)"> </fapiao-item>
                             </div>
                             <div class="fapiao_total" v-if="fp_info.length > 0">
                                 <div class="left" @click="onCopyMoney()">
@@ -224,51 +268,45 @@
                                     <big>{{totalFapiaoMoney}}</big>
                                 </div>
                                 <div class="right">
-                                    <van-button type="info" native-type="button" @click="fillTotalMoney" size="mini">填充总金额</van-button>
+                                    <van-button type="info" native-type="button" @click="fillTotalMoney" size="mini">
+                                        填充总金额</van-button>
                                 </div>
                             </div>
                         </div>
                     </van-cell-group>
-                    <!-- 分摊 -->
-                    <van-cell-group border class="marginTop cell-group" v-if="form.ywcj.id != 7188">
-                        <div class="title">分摊信息</div>
-                        <div class="content" @click="openFentang()">
-                            <van-button v-if="!form.ft_info.length" native-type="button" block borderless type="info"
-                                plain @click="openFentang()" icon='balance-list'>
-                                新建分摊</van-button>
-                            <div v-if="form.ft_info.length">
-                                <van-cell class="avg_cell" border :title="el.cdbm.name" v-for="el in form.ft_info"
-                                    :key="el.cdbl.id">
-                                    <span>￥{{el.cdje}}</span>
-                                    <span>({{el.cdbl}}%)</span>
-                                </van-cell>
-                            </div>
-                        </div>
-                    </van-cell-group>
                 </template>
+                 <!-- 分摊 -->
+                <van-cell-group border class="marginTop cell-group">
+                    <div class="title">分摊信息</div>
+                    <div class="content" @click="openFentang()">
+                        <van-button v-if="!form.ft_info.length" native-type="button" block borderless type="info"
+                            plain @click="openFentang()" icon='balance-list'>
+                            新建分摊</van-button>
+                        <div v-if="form.ft_info.length">
+                            <van-cell class="avg_cell" border :title="el.cdbm.name" v-for="el in form.ft_info"
+                                :key="el.cdbl.id">
+                                <span>￥{{el.cdje}}</span>
+                                <span>({{el.cdbl}}%)</span>
+                            </van-cell>
+                        </div>
+                    </div>
+                </van-cell-group>
                 <!-- 底部保存 -->
-                <div class="van-tabbar--fixed bottom_saved_buttons" v-if="!edit_mode">
+                <div class="van-tabbar--fixed bottom_saved_buttons">
                     <van-row>
-                        <van-col span="10">
-                            <van-button @click="onAddSaveAgain" native-type="button" type="default" borderless
-                                style="background:rgb(247,247,247)" block icon="certificate">再记一笔</van-button>
+                        <van-col span="3">
+                            <van-button vertical @click="onSplit()" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block icon="cluster-o">拆分</van-button>
+                        </van-col>
+                        <van-col span="1"></van-col>
+                        <van-col span="6">
+                            <van-button vertical @click="edit_mode? onEditRemove(): onAddSaveAgain()" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block icon="certificate">{{edit_mode? '移除': '再记一笔'}}</van-button>
                         </van-col>
                         <van-col span="1"></van-col>
                         <van-col span="13">
-                            <van-button @click="onAddSave" native-type="button" type="info" borderless block icon="success">确认保存
-                            </van-button>
-                        </van-col>
-                    </van-row>
-                </div>
-                 <div class="van-tabbar--fixed bottom_saved_buttons" v-if="edit_mode">
-                    <van-row>
-                        <van-col span="7">
-                            <van-button @click="onEditRemove" native-type="button" type="default" borderless
-                                style="background:rgb(247,247,247)" block icon="delete">移除</van-button>
-                        </van-col>
-                        <van-col span="1"></van-col>
-                        <van-col span="16">
-                            <van-button @click="onEditSave" native-type="button" type="info" borderless block icon="edit">确认保存
+                            <van-button @click="editmode? onEditSave(): onAddSave()" native-type="button" type="info" borderless block
+                                icon="success">确认保存
                             </van-button>
                         </van-col>
                     </van-row>
@@ -278,7 +316,8 @@
         <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }"
             get-container="body" :lock-scroll="!isErjiRoute">
             <transition name="van-fade">
-                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw" @chooseHxfy="chooseHxfy" ></router-view>
+                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"
+                    @chooseHxfy="chooseHxfy"></router-view>
             </transition>
         </van-popup>
     </div>
@@ -302,8 +341,9 @@
         mapGetters
     } from 'vuex'
     import pictureCompress from 'picture-compressor-plus';
-    import { ImagePreview } from 'vant';
+  
     import fapiaoHandler from './../../utils/fapiao';
+    // import {eq} from 'loadsh'
     export default {
         data() {
             return {
@@ -324,17 +364,21 @@
                     wanlai_danwei: {},
                     liuyan: '',
                     ft_info: [],
-                    wdpje:0,
+                    wdpje: 0,
                     wdp_list: [],
-                    fp_info:[]
+                    fp_info: [],
+                    cf_list: []
                 },
                 saveId: [],
-                update_id: this.$route.query.dj_id || null,
-                uploading:false
+                
+              
+                uploading: false,
+                split_parent: {},
+                split_totalMoney:0
             }
         },
-        components:{
-            fapiaoItem:()=>import('./../../components/Bill_FapiaoItem')
+        components: {
+            fapiaoItem: () => import('./../../components/Bill_FapiaoItem')
         },
         watch: {
             async 'form.ywcj.id'(val) {
@@ -346,6 +390,12 @@
                 await this.$nextTick();
                 this.$refs.form && this.$refs.form.resetValidation();
             },
+            async 'form.dprq'(val){
+                console.log(val,val instanceof Date);
+                if(val == 'Invalid Date') {
+                    this.form.dprq = new Date();
+                }
+            }
         },
         computed: {
             isErjiRoute: {
@@ -358,15 +408,27 @@
                 ywcjColumns: 'ywcjList',
                 regRules: 'regRules'
             }),
-            edit_mode(){
-                return this.$route.query.hasOwnProperty('dj_id') || false
+            edit_mode() {
+                return this.$route.query.hasOwnProperty('edit_id') || false
             },
-            totalFapiaoMoney(){
-                return this.fp_info.reduce((t, el) =>{
+            split_mode(){
+                return this.$route.query.hasOwnProperty('split_id') || false
+            },
+            totalFapiaoMoney() {
+                return this.fp_info.reduce((t, el) => {
                     t += Number(el.invoice_money);
                     return t;
                 }, 0).toFixed(2)
-            }
+            },
+            isSplitMatched(){
+                return Boolean(this.form.cf_list.find(el => el.id == this.update_id))
+            },
+            update_id(){
+                return this.$route.query.edit_id || null
+            },
+              split_id(){
+                  return this.$route.query.split_id || null
+              }
         },
         created() {
             if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
@@ -376,14 +438,18 @@
                 // })
             }
             this.form.ywcj = this.ywcjColumns[0];
-            if(this.update_id) {
-                var loading = this.$toast.loading({message:'加载费用',duration:0})
-                bill_edit_get_danjuInfo(this.update_id).then(r=>{
+           this.getEditData();
+           this.getSplitData();
+        },
+        methods: {
+            getEditData(){
+                if(!this.update_id) return;
+                bill_edit_get_danjuInfo(this.update_id).then(r => {
                     var data = r.data || {};
                     this.form = {
                         bcdp: Number(data.je).toFixed(2),
                         dprq: new Date(data.rq),
-                        ft_info: data.ft_info.map(el=>{
+                        ft_info: data.ft_info.map(el => {
                             el.cdje = Number(el.je).toFixed(2);
                             return el
                         }),
@@ -393,127 +459,163 @@
                         ywcj: data.ywcj,
                         wdpje: 0,
                         duisi: data.zhbj == 2,
-                        wdp_list: data.wdp_list.filter(Boolean)
+                        wdp_list: data.wdp_list.filter(Boolean),
+                        cf_list: data.cf_list
                     };
                     this.fp_info = data.fp_info.map(el => {
                         var obj = JSON.parse(el.imgjson_info);
-                        for(var o in obj){
+                        for (var o in obj) {
                             el[o] = obj[o]
                         }
                         el.imgurl = el.imgurl;
                         el.id = el.id;
                         return el
                     });
+                    this.getSplitMoney(data);
                     this.getHexiaoFeiyong();
-                }).catch(e=>e).finally(()=>{
-                    loading.close();
-                })
-            }
-        },
-        methods: {
-            open_hexiao(){
-                this.$refs.form.validate('xfje').then(r=>{
-                    this.go2sub({name: 'bill_add_hexiao'})
+                }).catch(e => e)
+            },
+            getSplitData(){
+                if (this.split_id) {
+                    bill_edit_get_danjuInfo(this.split_id).then(r => {
+                        var data = r.data || {};
+                        this.form.cf_list= data.cf_list.length == 0? [
+                            {cfje: 0,zje:data.je,id: data.id,cfbs:  1,fylxmc: data.xflx.fylxmc}
+                        ] :data.cf_list;
+                        this.getSplitMoney(data);
+                    }).catch(e => e)
+                }
+            },
+            getSplitMoney(data){
+                this.split_parent = data;
+                this.split_totalMoney = data.cf_list.length == 0? data.je: data.cf_list.find(el=>el.cfbs == 1).zje;
+            },
+            onSplitCellClick(el){
+                if(this.$route.query.edit_id == el.id) return;
+                this.$router.replace({query: {
+                    edit_id: el.id
+                }}).then(r=>{
+                    this.getEditData();
+                    this.getSplitData();
                 })
             },
-            onPreviewFapiao(el){
-                ImagePreview({
-                    images: [el],
-                    closeable: true,
-                });
+            open_hexiao() {
+                this.$refs.form.validate('xfje').then(r => {
+                    this.go2sub({
+                        name: 'bill_add_hexiao'
+                    })
+                })
             },
-            fillTotalMoney(){
+            async onSplit(){
+                var split_id = this.update_id;
+                if(!split_id) {
+                    var dislogResult = await this.$dialog.confirm({ title: '提示', message: '是否保存此费用, 保存后方可拆分' }).then(r => 'confirm').catch(e => 'cancel')
+                    if(dislogResult != 'confirm') return false; 
+                    var isPassed = await this.$refs.form.validate().then(r=>true).catch(e=>false);
+                    if(!isPassed) return false;
+                    var savedID = await this.onSubmit();
+                    if(!savedID) return false;
+                    return this.$router.push({path: '/bill/split', query: {'id': savedID}});
+                }
+                this.$router.push({path: '/bill/split', query: {'id': this.split_parent.pfyid}});
+            },
+            fillTotalMoney() {
                 this.form.bcdp = this.totalFapiaoMoney;
-                this.$refs.form.scrollToField('xfje',false);
+                this.$refs.form.scrollToField('xfje', false);
                 this.$toast.success('填充金额成功!');
             },
-            async beforeRead(file){
-                if(!file.type.includes('image'))  return this.$toast('暂时只支持图片文件!');
+            async beforeRead(file) {
+                if (!file.type.includes('image')) return this.$toast('暂时只支持图片文件!');
             },
-            onCopyMoney(){
+            onCopyMoney() {
                 copyText(this.totalFapiaoMoney);
                 this.$toast.success('已复制总金额');
             },
-            afterRead(object){
+            afterRead(object) {
                 this.uploading = true;
                 pictureCompress({
                     img: object.content,
-                    width: 1200,
-                    height: 1200,
+                    width: 1500,
+                    height: 1500,
                     fit: 'scale',
                     type: 'jpg'
                 }).then(res => {
-                    parse_info_from_base64(res.img.replace(/^data:image\/\w+;base64,/, "")).then(r=>{
-                        try{
+                    parse_info_from_base64(res.img.replace(/^data:image\/\w+;base64,/, "")).then(r => {
+                        try {
                             var json = JSON.parse(r.data.data);
                             var imgurl = r.data.imgPath;
-                            var ret = json.data.ret.find(el=> el.templateSign != 'others') || json.data.ret[0];
+                            var ret = json.data.ret.find(el => el.templateSign != 'others') || json.data
+                                .ret[0];
                             var obj = fapiaoHandler(ret);
-                            if(this.fp_info.length == 0) {
+                            if (this.fp_info.length == 0) {
                                 this.onFapiaoFill(obj, false);
                             }
                             console.log(ret);
-                            obj.imgurl = imgurl.replace('../','http://webt.lilang.com:9001/');
+                            console.log(JSON.stringify(obj.detail))
+                            obj.imgurl = imgurl.replace('../', 'http://webt.lilang.com:9001/');
                             obj.imgjson_row = JSON.stringify(ret);
                             obj.imgjson_info = JSON.stringify(obj);
+                            if(this.fp_info.find(el=>el.uuid == obj.uuid)) {
+                                return this.$toast.fail('已存在此发票, 请勿重复添加!')
+                            }
                             this.fp_info.push(obj);
                             console.log(json)
-                        }catch(e){
+                        } catch (e) {
                             console.error(e);
                             this.$toast.fail('发票格式错误!')
                         }
-                    }).catch(e=>{
+                    }).catch(e => {
                         var errmsg = e.message || '识别失败, 请稍后重试!'
                         errmsg = errmsg.replace('Error:', '');
                         this.$toast.fail(errmsg)
-                    }).finally(()=>{
+                    }).finally(() => {
                         this.uploading = false
                     })
-                }).catch(e=> {
+                }).catch(e => {
                     // console.log(e);
                     this.$toast.fail('图片压缩失败, 请稍后重试!')
                 })
-       
+
             },
-            onFapiaoClick(el){
-                console.log(el);
-                this.onPreviewFapiao(el.imgurl)
-            },
-            onFapiaoDelete: dialogConfirm(function(i){
+            onFapiaoDelete: dialogConfirm(function (i) {
                 this.fp_info.splice(i, 1)
             }),
-            async onFapiaoFill(obj, showToast = true){
-                if(obj.type == 'others') {
-                   showToast && this.$toast('暂不支持未知发票!')
-                   return false;
+            async onFapiaoFill(obj, showToast = true) {
+                if (obj.type == 'others') {
+                    showToast && this.$toast('暂不支持未知发票!')
+                    return false;
                 }
                 this.form.bcdp = obj.invoice_money;
                 this.form.dprq = obj.invoice_date;
                 var zhmc = obj.invoice_wanlai;
-                if(!this.form.duisi && zhmc) {
-                    bill_add_get_wldw_by_name(zhmc).then(r=>{
-                        if(r.data.length > 0) {
+                if (!this.form.duisi && zhmc) {
+                    bill_add_get_wldw_by_name(zhmc).then(r => {
+                        if (r.data.length > 0) {
                             this.form.wanlai_danwei = r.data[0];
-                            showToast && this.$toast.success('智能填充完成!')     
-                        }else {
+                            showToast && this.$toast.success('智能填充完成!')
+                        } else {
                             return Promise.reject(false);
                         }
-                    }).catch(e=> {
+                    }).catch(e => {
                         copyText(zhmc);
                         this.$toast('找不到此往来单位,请手动查找!');
                         return false;
+                    }).finally(() => {
+                        this.getHexiaoFeiyong();
                     })
-                }else {
-                    showToast && this.$toast.success('智能填充完成!')                    
+                } else {
+                    showToast && this.$toast.success('智能填充完成!')
                 }
             },
-            getHexiaoFeiyong(){
-                 if(this.form.ywcj.id == 7189 || this.form.ywcj.id == 7186) {
+            getHexiaoFeiyong() {
+                if (this.form.ywcj.id == 7189 || this.form.ywcj.id == 7186) {
                     var zhmc = this.form.wanlai_danwei.zhmc;
-                    bill_add_get_weidaopiao_money({zhmc}).then(r=>{
+                    bill_add_get_weidaopiao_money({
+                        zhmc
+                    }).then(r => {
                         console.log(r);
                         this.form.wdpje = Number(r.data).toFixed(2);
-                    }).catch(e=>{
+                    }).catch(e => {
                         console.log(e);
                     })
                 }
@@ -526,19 +628,23 @@
                 })
                 this.$router.push(route)
             },
-            onMoneyBlur(){
+            onMoneyBlur() {
                 this.$refs.form.validate('xfje').then(r => {
                     this.form.bcdp = Number(this.form.bcdp).toFixed(2);
                 }).catch(e => {
                     this.$toast.fail(e.message);
                 })
             },
-            
-            async onEditRemove(){
-                var isDelete = await this.$dialog.confirm({ title: '删除', message: '是否删除?', }) .then(r => true).catch(e=>false);
-                if( !isDelete ) return;
+
+            async onEditRemove() {
+                var isDelete = await this.$dialog.confirm({
+                    title: '删除',
+                    message: '是否删除?',
+                }).then(r => true).catch(e => false);
+                if (!isDelete) return;
                 bill_del_danju(this.update_id).then(r => {
                     this.$toast.success('删除成功');
+                    if(this.split_id) return this.$router.push({name: 'bill_split', query: {'id': this.split_id}});
                     this.$router.push({
                         name: 'account',
                         params: {
@@ -547,68 +653,76 @@
                     })
                 }).catch(e => e)
             },
-            async onEditSave(){
+            async onEditSave() {
                 this.$refs.form.validate().then(r => {
-                    this.onSubmit(this.update_id).then(async r => {
+                    this.onSubmit().then(async r => {
                         this.$router.push({
                             name: 'account',
                             params: {
                                 update_id: this.update_id
                             }
                         })
-                    })
+                    }).catch(e=>e)
                 })
             },
             async onAddSave() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(r => {
-                            this.$router.push({
-                                name: 'account',
-                            }).then(r=>{
-                                this.$eventBus.$emit('refreshView')
+                        console.log(r);
+                        if(this.split_mode) {
+                            return this.$router.push({
+                                name: 'bill_split',
+                                query: {
+                                    id: this.split_id
+                                }
                             })
-                    })
+                        }
+                        this.$router.push({
+                            path: 'account',
+                        }).then(r => {
+                            this.$eventBus.$emit('refreshView')
+                        })
+                    }).catch(e=>e)
                 })
             },
             async onAddSaveAgain() {
                 this.$refs.form.validate().then(r => {
                     this.onSubmit().then(async r => {
                         this.$eventBus.$emit('refreshView')
-                    })
+                    }).catch(e=>e)
                 })
             },
-            onSubmit(update_id) {
-                var djlx = this.form.ywcj.djlx;
-                var djlb = this.form.ywcj.id;
-                var ny = dateFormat(this.form.dprq, 'yyyyMM');
-                var rq = dateFormat(this.form.dprq, 'yyyy-MM-dd');
-                var zhid = this.form.wanlai_danwei.id;
-                var zhmc = this.form.wanlai_danwei.zhmc;
-                var je = this.form.bcdp;
-                var zhbj = '0';
-                var bz = this.form.liuyan;
-                var fydlmc = this.form.xflx.fydlmc;
-                var fylxmc = this.form.xflx.fylxmc;
-                var fylxid = this.form.xflx.id;
-                var dgbs = this.form.duisi? 2 : 1;
-                var ft_info = this.form.ft_info;
-                var fp_info = this.fp_info;
-                var wdp_list = this.form.wdp_list;
-                var obj = { djlx, djlb, rq, zhid, je, zhbj, bz, fydlmc, fylxmc, fylxid, zhmc, dgbs, ny, ft_info, wdp_list, fp_info }
-                if(update_id) {
-                    obj.update_id = update_id
+            onSubmit() {
+                var data = {
+                    djlx : this.form.ywcj.djlx,
+                    djlb : this.form.ywcj.id,
+                    ny : dateFormat(this.form.dprq, 'yyyyMM'),
+                    rq : dateFormat(this.form.dprq, 'yyyy-MM-dd'),
+                    zhid : this.form.wanlai_danwei.id,
+                    zhmc : this.form.wanlai_danwei.zhmc,
+                    je : this.form.bcdp,
+                    zhbj : '0',
+                    bz : this.form.liuyan,
+                    fydlmc : this.form.xflx.fydlmc,
+                    fylxmc : this.form.xflx.fylxmc,
+                    fylxid : this.form.xflx.id,
+                    dgbs : this.form.duisi ? 2 : 1,
+                    ft_info : this.form.ft_info,
+                    fp_info : this.fp_info,
+                    wdp_list : this.form.wdp_list,
+                    update_id: this.update_id,
+                    split_id: this.split_id
                 }
-                return new Promise((res, rej) => {
-                   return bill_set_data(obj).then(r => {
-                        if (r.errcode == 0) {
-                            this.saveId.push(r.data.id);
-                            this.$toast.success('保存成功!');
-                            res(true);
-                        } else {
-                            this.$toast.fail('保存失败!');
-                            rej(false)
-                        }
-                    })
+                console.log(data);
+                return bill_set_data(data).then(r => {
+                    if (r.errcode == 0) {
+                        this.saveId.push(r.data);
+                        this.$toast.success('保存成功!');
+                        return Promise.resolve(r.data);
+                    } else {
+                        this.$toast.fail('保存失败!');
+                        return Promise.reject(false)
+                    }
                 })
             },
             openFentang() {
@@ -631,7 +745,7 @@
                 this.$store.dispatch('appGoback');
                 this.getHexiaoFeiyong();
             },
-            chooseHxfy(val){
+            chooseHxfy(val) {
                 this.form.wdp_list = val;
                 this.$store.dispatch('appGoback');
             },
@@ -640,7 +754,7 @@
                 this.ywcjStatus = false;
             },
             dataFormatter(type, val) {
-                return type === 'year'? `${val}年`: type === 'month' ?  `${val}月`: type==='day' ? `${val}日`: val;
+                return type === 'year' ? `${val}年` : type === 'month' ? `${val}月` : type === 'day' ? `${val}日` : val;
             },
             onDateConfirm() {
                 this.dprqStatus = false;
@@ -654,42 +768,17 @@
     }
 </script>
 <style lang="less">
-    .bcdp-item {
-        .flex();
-
-        span {
-            padding-right: 10px;
-            position: relative;
-            color: #323233;
-
-            &::after {
-                content: '';
-                width: 2px;
-                height: 20px;
-                background: rgba(128, 128, 128, 0.313);
-                display: block;
-                position: absolute;
-                right: 0;
-                top: 50%;
-                margin-top: -10px;
-            }
-        }
-
-        input {
-            border: none;
-            padding-left: 10px;
-            background: transparent;
-            width: 100%;
-        }
-    }
+  
 
     .bill_add_container {
         .bill_add_wrapper {
             .van-form {
                 padding-bottom: 100px;
-                .van-cell--required::before{
+
+                .van-cell--required::before {
                     left: 6px;
-                    margin-top: 3px;;
+                    margin-top: 3px;
+                    ;
                 }
             }
 
@@ -737,6 +826,7 @@
                 }
             }
 
+
             .marginTop {
                 margin-top: 10px;
             }
@@ -753,7 +843,8 @@
                     padding-left: 18px;
                     border-bottom: 1px solid #ebedf0;
                     position: relative;
-                    &::before{
+
+                    &::before {
                         content: '';
                         width: 5px;
                         height: 36%;
@@ -761,10 +852,11 @@
                         display: block;
                         position: absolute;
                         top: 32%;
-                        left:6px;
+                        left: 6px;
                     }
-                    .right{
-                        float:right;
+
+                    .right {
+                        float: right;
                         padding-right: 18px;
                         .flex();
                         height: 100%;
@@ -772,31 +864,37 @@
                 }
 
                 .content {
+
                     // height: 60px;;
-                    .hexiao-tip{
-                        padding:10px 5px ;
-                        font-size:90%;
+                    .hexiao-tip {
+                        padding: 10px 5px;
+                        font-size: 90%;
                         text-align: center;
-                        .van-notice-bar{
+
+                        .van-notice-bar {
                             width: 220px;
                             margin: 0 auto;
                         }
                     }
                 }
             }
-            .van-uploader{
-                width: 100%;;
+
+            .van-uploader {
+                width: 100%;
+                ;
             }
-            .van-uploader__input-wrapper{
-                flex:1;
+
+            .van-uploader__input-wrapper {
+                flex: 1;
             }
-            .fapiao_total{
-                .flex(@j:space-between);
+
+            .fapiao_total {
+                .flex(@j: space-between);
                 .border(top);
                 padding: 8px 10px;
             }
 
-            
+
 
         }
 

@@ -19,23 +19,23 @@ export default {
                     setStorage({name: 'expenseTypeList', content: state.list});
                 },
                 SET_RENCENT_XFLX(state, el){
-                    var l = state.recent;
-                    var index = l.findIndex(i => i.id == el.id);
-                    if (index != -1) {
-                        l.splice(index, 1)
-                    }
-                    l.unshift(el);
+                    var recent = state.recent;
+                    var index = recent.findIndex(i => i.id == el.id);
+                    index != -1 && recent.splice(index, 1);
+                    recent.unshift(el);
+                    recent = recent.filter((el,i)=> i + 1 <= 10);
                     setStorage({
                         name: 'recent-xflx-list',
-                        content: l
+                        content: recent
                     });
                 }
             },
             actions: {
-                async init_expenseType({commit, state}){
-                    if(state.list.length > 0 ) return;
+                async init_expenseType({commit, state}, force = false){
+                    if(state.list.length > 0 && !force) return console.log('费用类型列表已加载!');
                     var rowList = await bill_get_expense_type().then(r => r.data ).catch(e => [])
                     await commit('SET_LIST',rowList);
+                    console.log('现在的费用类型列表: ', state.list);
                 }
             }
         }

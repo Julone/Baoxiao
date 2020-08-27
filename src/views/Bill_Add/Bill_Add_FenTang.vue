@@ -1,22 +1,24 @@
 <template>
-    <div class="fengtang-container" ref="ftContainer" :style="{height: app_height +'px'}">
-        <van-nav-bar title="分摊金额" placeholder left-text="返回" left-arrow
-            @click-left="$store.dispatch('appGoback')" />
+    <div class="fengtang-container" ref="ftContainer" :style="{height: appHeight +'px'}">
+        <van-nav-bar title="分摊金额" placeholder left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main" ref="main">
             <van-cell class="sticky" style="top:0">
                 <template #title>
                     <div>
-                        1条费用,金额 ￥{{ft_money}}
+                        1条费用，金额 ￥{{ft_money}}
                     </div>
                 </template>
                 <a class="blue-text" @click="avgMoney"> 平均分摊</a>
             </van-cell>
-
-            <van-form ref="form" :show-error="false" :show-error-message="show_error" novalidate>
-                <transition-group name="van-slide-right">
+            <!-- {{fentang_list}} -->
+            <van-form ref="form" style="position:relative" :show-error="false" :show-error-message="show_error"
+                novalidate>
+                <van-divider style="padding:5vw 0" v-if="fentang_list.length ==0">暂无分摊, 请添加分摊</van-divider>
+                <transition-group name="van-slide-right" mode="out-in" >
                     <div style="width: 100%" v-for="(el,index) in fentang_list" :key="el.id">
-                        <div class="ft_title"><span>分摊({{index+1}}) </span>
-                            <van-button size="small" bgless borderless icon="delete" @click="remove_item(index)">
+                        <div class="ft_title"><span>分摊({{index+1}}) {{el.id}}</span>
+                            <van-button native-type="button" size="small" bgless borderless icon="delete"
+                                @click="removeItem(el.id)">
                             </van-button>
                         </div>
                         <van-field v-model="el.cdje" label="承担金额" clickable required :rules="regRules.money">
@@ -24,38 +26,46 @@
                                 <div class="bcdp-item">
                                     <div class="bcdp-item-left">
                                         <span>CNY</span>
-                                        <input type="number" step="0.01" placeholder="请输入承担金额" v-model="el.cdje">
+                                        <input type="number" step="0.01" @focus="inputFocus(el, 'cdje')"
+                                            @blur="updateRate" @keyup.enter="updateRate" placeholder="请输入承担金额"
+                                            v-model="el.cdje">
                                     </div>
                                     <a class="blue-text" @click="fill_money(el,index)"><small>填充金额</small></a>
                                 </div>
                             </template>
                         </van-field>
-                        <van-field v-model="el.cdbl" label="承担比例" type="number" clickable required
-                            :rules="regRules.percent">
+                        <van-field v-model="el.cdbl" label="承担比例" clickable required :rules="regRules.percent">
                             <template #input>
                                 <div v-if="!el.focus && el.cdbl" @click="onCdblClick(el)" w100>
                                     {{el.cdbl}}%
                                 </div>
                                 <input class="cdbl_input" ref="cdbl_input" v-if="el.focus || !el.cdbl" type="number"
-                                    placeholder="请输入承担比例" borderless v-model.lazy="el.cdbl" min="0" max="100" step="10"
-                                    @blur="changePercent(el)" w100 />
+                                    placeholder="请输入承担比例(0 ~ 100)" borderless v-model.number.lazy="el.cdbl" min="0"
+                                    max="100" step="10" @blur="changePercent(el)" w100
+                                    @focus="inputFocus(el, 'cdbl')" />
                             </template>
                         </van-field>
                         <van-field v-model="el.cdbm.name" label="承担部门" clickable required placeholder="请选择承担部门"
                             :rules="[{ required: true, message: '请选择承担部门',trigger: 'onChange' }]" is-link readonly
-                            @click="selectStart(el)">
+                            @click="onDeptClick(el)">
                         </van-field>
                     </div>
                 </transition-group>
 
-                <van-row class="marginTop">
+
+                <van-cell-group class="marginTop" v-if="fentang_list.length > 0">
+                    <van-button native-type="button" type="danger" @click="removeAll()" plain borderless block>删除全部
+                    </van-button>
+                </van-cell-group>
+
+                <van-row class="marginTop marginBottom">
                     <van-col span="12" class="border-right">
-                        <van-button native-type="button" type="danger" @click="removeAll" plain borderless block>删除全部
-                        </van-button>
+                        <van-button native-type="button" type="info" @click="addFengtangOne()" plain borderless block>
+                            添加分摊</van-button>
                     </van-col>
                     <van-col span="12">
-                        <van-button native-type="button" type="info" @click="addFengtang" plain borderless block>添加分摊
-                        </van-button>
+                        <van-button native-type="button" type="info" @click="addFengtangMultiple()" plain borderless
+                            block>多选分摊</van-button>
                     </van-col>
                 </van-row>
             </van-form>
@@ -77,7 +87,8 @@
         </div>
         <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
             <transition name="van-fade">
-                <router-view @select_dept="select_dept"></router-view>
+                <router-view :fentang_list="fentang_list" :activeItem="activeItem" @select-dept="selectDept"
+                    @select-multiple-dept="selectMultipleDept" :rq="formdata.dprq"></router-view>
             </transition>
         </van-popup>
     </div>
@@ -91,20 +102,23 @@
         accAdd,
         accMul,
         accDiv
-    } from './../../utils/math';
-    import {dialogConfirm} from './../../utils/utils'
+    } from '@/utils/math';
+    import {
+        dialogConfirm,
+        randomString
+    } from '@/utils/utils'
     export default {
         data() {
             return {
                 fentang_list: [],
                 ft_money: this.formdata.bcdp || 0,
-                activeItem: -1,
+                activeItem: {},
                 show_error: true
             }
         },
         props: ['formdata'],
         computed: {
-            ...mapGetters(['app_height', 'regRules']),
+            ...mapGetters(['appHeight', 'regRules']),
             isErjiRoute: {
                 get() {
                     return this.$route.path.startsWith('/bill/add/fentang/')
@@ -118,57 +132,52 @@
                 }, 0)
             }
         },
-        created() {
-            this.fentang_list = Array.from(this.formdata.ft_info);
-            if (this.fentang_list == 0) {
-                this.addFengtang();
-            }
-        },
+
         methods: {
             async onCdblClick(el) {
                 el.focus = true;
                 await this.$nextTick();
                 this.$refs.cdbl_input && this.$refs.cdbl_input[0].focus();
             },
+            inputFocus(el, key) {
+                if (Number(el[key]) == 0) {
+                    el[key] = "";
+                }
+            },
             onSave() {
                 this.show_error = true;
-                this.$refs.form.validate();
-                if (this.validateForm()) {
-                    this.formdata.ft_info = Array.from(this.fentang_list);
-                    this.$store.dispatch('appGoback');
-                }
+                this.$refs.form.validate().then(r => {
+                    if (this.validateForm()) {
+                        this.formdata.ft_info = Array.from(this.fentang_list);
+                        this.$store.dispatch('appGoback');
+                    }
+                }).catch(e => {
+                    console.log(e);
+                    this.$toast.fail(e[0].message)
+                })
             },
             changePercent(item) {
                 item.focus = false;
                 item.cdbl = Number(item.cdbl);
                 item.cdje = (this.ft_money * 0.01 * item.cdbl).toFixed(2);
             },
-            select_dept(dept) {
-                if (this.activeItem == -1) this.$store.dispatch('appGoback');
-                this.activeItem.cdbm = dept;
-                this.$store.dispatch('appGoback')
-            },
-            selectStart(item) {
-                this.activeItem = item;
-                this.$router.push({
-                    path: this.$route.path + '/bill_add_dept'
-                });
-            },
-            remove_item: dialogConfirm(function(index) {
-                this.fentang_list.splice(index, 1);
+
+
+
+            removeItem: dialogConfirm(function (id) {
+                var index = this.fentang_list.findIndex(el => el.id == id)
+                index != -1 && this.fentang_list.splice(index, 1);
             }),
-            fill_money(el, index) {
-                var leftMoney = this.fentang_list.reduce((t, el, i) => {
-                    if (index != i) t = accSub(t, el.cdje);
-                    return t;
-                }, this.ft_money)
-                this.fentang_list[index].cdje = leftMoney;
-                this.updateRate();
-            },
-            removeAll: dialogConfirm(function() {
+            removeAll: dialogConfirm(function () {
                 this.fentang_list = [];
-            }, {title: '删除全部',message: '是否删除全部?'}),
+            }, {
+                title: '删除全部',
+                message: '是否删除全部?'
+            }),
             avgMoney() {
+                if (this.ft_money <= 0) {
+                    return this.$toast.fail('分摊金额不能为' + this.ft_money + "元");
+                }
                 var leftMoney = this.ft_money;
                 var leftRate = 100;
                 var arrLen = this.fentang_list.length;
@@ -186,18 +195,24 @@
                     return el;
                 })
             },
+            fill_money(el, index) {
+                if (this.ft_money <= 0) {
+                    return this.$toast.fail('分摊金额不能为' + this.ft_money + "元");
+                }
+                var leftMoney = this.fentang_list.reduce((t, el, i) => {
+                    if (index != i) t = accSub(t, el.cdje);
+                    return t;
+                }, this.ft_money)
+                this.fentang_list[index].cdje = leftMoney;
+                this.updateRate();
+            },
             validateForm(el) {
                 var leftMoney = this.fentang_list.reduce((t, el, i) => {
                     t = accSub(t, el.cdje)
                     return t;
                 }, this.ft_money);
                 if (leftMoney < 0) {
-                    this.$toast('合计金额不能超过总金额');
-                    return false;
-                };
-                var el = this.fentang_list.filter(el => !el.cdbm.id);
-                if (el.length) {
-                    this.$toast('请选择承担部门');
+                    this.$toast.fail('合计金额不能超过总金额');
                     return false;
                 }
                 return true;
@@ -205,34 +220,82 @@
             updateRate() {
                 this.fentang_list = this.fentang_list.map(el => {
                     el.cdbl = (accDiv(el.cdje, this.ft_money) * 100).toFixed(2);
+                    el.cdje = Number(el.cdje).toFixed(2);
                     return el;
                 })
             },
-            async addFengtang() {
+            async addFengtangMultiple() {
+                this.$router.push({
+                    path: this.$route.path + '/bill_add_dept',
+                    query: {
+                        multiple: true
+                    }
+                });
+            },
+            onDeptClick(item) {
+                this.activeItem = item;
+                this.$router.push({
+                    path: this.$route.path + '/bill_add_dept',
+                    query: {
+                        breadcrumb: item.breadcrumb,
+                        keyword: item.keyword
+                    }
+                });
+            },
+            async addFengtangOne() {
                 this.fentang_list.push({
                     cdje: 0,
-                    cdbl: '',
+                    cdbl: 0,
                     cdbm: {},
                     focus: false,
-                    id: +new Date()
+                    id: randomString()
                 });
+            },
+            selectDept({
+                dept,
+                breadcrumb = [],
+                keyword = ""
+            }) {
+                if (this.activeItem == -1) this.$store.dispatch('appGoback');
+                this.activeItem.cdbm = dept;
+                this.activeItem.breadcrumb = breadcrumb
+                this.$store.dispatch('appGoback')
+            },
+            async selectMultipleDept({
+                depts,
+                breadcrumb = [],
+                keyword =""
+            }) {
+                this.$store.dispatch('appGoback');
+                console.log(depts);
                 this.show_error = false;
-                await this.$nextTick();
-                this.$refs.ftContainer.scrollBy({left:0,top:400,behavior:'smooth'})
+                depts.forEach(el => {
+                    this.fentang_list.push({
+                        cdje: 0,
+                        cdbl: 0,
+                        cdbm: el,
+                        focus: false,
+                        id: randomString(),
+                        breadcrumb: breadcrumb,
+                        keyword: keyword
+                    });
+                })
             }
+        },
+        created() {
+            this.fentang_list = Array.from(this.formdata.ft_info.map(el => {
+                el.id = el.id ? el.id : randomString();
+                el.breadcrumb = el.breadcrumb ? el.breadcrumb : [];
+                return el
+            }));
         }
-
     }
 </script>
 <style lang="less">
     .fengtang-container {
         overflow: auto;
+        overflow-x: hidden;
         background-color: rgb(240, 242, 245);
-
-        &>* {
-            z-index: 100000;
-
-        }
 
         .bcdp-item {
             width: 100%;
@@ -259,15 +322,13 @@
             }
         }
 
-        .main {
-            padding-bottom: 100px;
-            ;
+        .van-form {
+            min-height: calc(100vh - 40vw);
         }
 
         .bottom_saved_buttons {
-            padding: 10px;
-            background: white;
-            right: 0;
+            position: sticky;
+            padding-bottom: 10px;
         }
     }
 </style>

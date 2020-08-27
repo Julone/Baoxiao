@@ -35,11 +35,13 @@ export default function (ret) {
         right_title1: '￥' + getValue("AmountInFiguers"),
         right_title2: getValue("TotalTax")? '税额: ￥' + getValue("TotalTax") : '' ,
         detail: ret.ret,
+        uuid: ret.templateSign + Date.now()
     }
     if(ret.templateSign == "vat_invoice") { //增值税发票
         obj.title = ret.templateName + `(${getValue("InvoiceType")})`;
         obj.invoice_date =  getValue("InvoiceDate").replace(/[年月]/g,'/').replace(/日/,"");
-        obj.invoice_wanlai = getValue("SellerName")
+        obj.invoice_wanlai = getValue("SellerName");
+        obj.uuid = `${getValue('InvoiceCode')},${getValue('InvoiceNum')},${getValue('InvoiceDate')}`;
     }else if(ret.templateSign == 'taxi') { //出租车
         obj.invoice_money = getValue('Fare');
         obj.right_title1 = getValue("Fare") || 0;
@@ -49,6 +51,7 @@ export default function (ret) {
     }else if(ret.templateSign == "roll_ticket") { //卷票 ok
         obj.title =  ret.templateName + "("+getValue("InvoiceType")+")";
         obj.right_title2 = '';
+        obj.uuid = `${getValue('InvoiceCode')},${getValue('InvoiceNum')},${getValue('InvoiceDate')}`;
     }else if(ret.templateSign == "quota_invoice") {
         obj.right_title1 = getValue("invoice_rate");
         obj.right_title1 = '发票号码: ' + getValue("invoice_number");
@@ -68,7 +71,8 @@ export default function (ret) {
     }
     obj.right_title1 = '￥' + Number(String(obj.right_title1).match(/[\d.]+/)).toFixed(2);
     obj.invoice_money = Number(String(obj.invoice_money).match(/[\d.]+/)).toFixed(2);
-    
+    obj.invoice_date = obj.invoice_date instanceof Date? obj.invoice_date: new Date(obj.invoice_date.replace(/-/g,'/'))
+
     return obj;
 
 }

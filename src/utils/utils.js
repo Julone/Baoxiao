@@ -93,6 +93,15 @@ export const dialogConfirm = (callback, options = {}) => {
         })
    }
 }
+export const randomString = ({withNumber=true, length = 8} = {}) => {
+    var enCharPool = 'abcdefghijklmnopqrstuvwxyz';
+    var numCharPool = '0123456789';
+    var pool = withNumber?enCharPool + numCharPool : enCharPool;
+    return Array.from({length}, i => {
+        var index = Math.floor(Math.random() * pool.length);
+        return pool.substr(index, 1);
+    }).join('')
+}
 export const copyText = (data="", trim = false) => {
     let url = trim? data.trim(): data;
     let oInput = document.createElement('input');

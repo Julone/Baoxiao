@@ -21,7 +21,6 @@ export default {
     },
     getters: {
         bill_get_type: (state,getters) => (id) =>{
-            console.log(state)
             return state.danju_type.map(el=>{
                 return el.children.find(el=>el.id == id) ;
             }).find(Boolean)

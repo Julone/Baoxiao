@@ -65,7 +65,7 @@
             isEditMode(){
                 return this.$route.query.mode == 'edit'
             },
-            ...mapGetters(['app_height'])
+            ...mapGetters(['appHeight'])
         },
         methods: {
             onCardClick(el){

@@ -1,9 +1,11 @@
-import axios, {axiosSilent, axiosJson} from './axios';
-
-var url = process.env.NODE_ENV == 'development' ? '/apicc' : 'http://elilee.mynatapp.cc/api-proxy/receiptApi';
-// var url = process.env.NODE_ENV == 'development' ? 'http://elilee.mynatapp.cc/api-proxy/receiptApi' : 'http://elilee.mynatapp.cc/api-proxy/receiptApi';
-import store from '@/store'
+import axios, {axiosSilent, axiosByJSON} from './axios';
 import {Toast} from 'vant'
+var url1 = "http://webt.lilang.com/test-gw/demo";
+var url2 = '/apicc';
+var url3 = 'http://elilee.mynatapp.cc/api-proxy/receiptApi';
+var url = process.env.NODE_ENV == 'development' ? url1 :process.env.VUE_APP_REMOTE_URL;
+
+import store from '@/store'
 export function bill_get_expense_type() {
     return axios({
         url: url + "/getFylx",
@@ -27,6 +29,7 @@ export function bill_get_ywcj() {
     })
 }
 export function auth_get_user_info(apptoken = "") {
+    if(!apptoken) return Toast.fail('身份失效, 请退出重试!')
     return axios({
         url: 'http://tm.lilanz.com/oa/api/lilanzimuser.ashx',
         method: 'GET',
@@ -64,9 +67,6 @@ export function bill_add_get_wldw_by_name(zhmc) {
 
 export function bill_set_data(data) {
     var formData = {
-        // "wdpId": 140,
-        // "wdplx": 12611,
-      
         "tzid": store.getters.activeAccount.khid,
         "khid": store.getters.activeAccount.khid,
         "zdr": store.getters.userinfo.cname,
@@ -98,10 +98,13 @@ export function bill_set_data(data) {
     if (data.update_id) {
         formData.id = data.update_id;
     }
+    if(data.split_id ){
+        formData.pfyid = data.split_id
+    }
     if(data.wdp_list.length > 0) {
         formData.wdp_list = data.wdp_list
     }
-    return axiosJson({
+    return axiosByJSON({
         url: url + '/setFy',
         method: 'POST',
         data: {
@@ -132,7 +135,7 @@ export function bill_get_hexiao({zhmc,wdpje}) {
                 "khid": store.getters.activeAccount.khid,
                 "zhmc": zhmc,
                 "dpje": wdpje,
-                userid: store.getters.userinfo.id,
+                "userid": store.getters.userinfo.id,
             }
         }
     })
@@ -141,7 +144,9 @@ export function bill_get_hexiao({zhmc,wdpje}) {
 export function bill_get_department({
     page,
     limit,
-    name =''
+    name = '',
+    id ='',
+    rq='202007'
 }) {
     return axios({
         url: url + '/getDeptListByTzidAndRq',
@@ -149,10 +154,11 @@ export function bill_get_department({
         params: {
             data: {
                 tzid: store.getters.activeAccount.khid,
-                rq: "202007",
+                rq,
                 page,
                 limit,
-                name
+                name,
+                id
             }
         }
     })
@@ -261,7 +267,7 @@ export function skzh_get_by_id(id) {
 }
 
 export function parse_info_from_base64(base64Str) {
-    return axiosJson({
+    return axiosByJSON({
         // http://192.168.35.136:15003/ORCSystem/PicRecognition
         // url: 'http://elilee.mynatapp.cc/api-proxy/receiptAI/ORCSystem/PicRecognition',
         url:'http://elilee.mynatapp.cc/api-proxy/receiptAI/ORCSystem/PicRecognition',

@@ -7,6 +7,8 @@ import './global/filter'
 // import './utils/flexible.js'
 import './vant.js'
 Vue.prototype.$eventBus = new Vue();
+Vue.config.productionTip = false;
+Vue.config.silent = true;
 
 new Vue({
   router,

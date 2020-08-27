@@ -1,14 +1,14 @@
 <template>
   <div id="app">
     <!-- 顺序不能反 -->
-    <transition name="van-fade" mode="out-in">
-      <keep-alive> 
-        <router-view :key="freshToken" v-if="$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
+    <!-- <transition name="van-fade" mode="out-in"> -->
+      <keep-alive :include="['account']">
+        <router-view :key="freshToken" :style="{minHeight: appHeight +'px'}"></router-view>
       </keep-alive>
-    </transition>
-    <transition name="van-fade" mode="out-in">
-      <router-view :key="freshToken" v-if="!$route.meta.keepAlive" :style="{minHeight: app_height +'px'}"></router-view>
-    </transition>
+    <!-- </transition> -->
+    <!-- <transition name="van-fade" mode="out-in"> -->
+      <!-- <router-view :key="freshToken" v-if="!$route.meta.keepAlive" :style="{minHeight: appHeight +'px'}"></router-view> -->
+    <!-- </transition> -->
     <van-tabbar v-model="activeTabbar" v-if="isShowTabbar">
       <van-tabbar-item name="home" icon="home-o">首页</van-tabbar-item>
       <van-tabbar-item name="account" icon="balance-list-o">账本</van-tabbar-item>
@@ -18,14 +18,13 @@
   </div>
 </template>
 <script>
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions, mapMutations} from 'vuex'
 export default {
   data(){
     return {
       freshToken: 0,
     }
   },
- 
   computed:{ 
     isShowTabbar(){
       return this.$route.meta && this.$route.meta.openTabbar
@@ -38,22 +37,21 @@ export default {
         return this.$router.push({name})
       }
     },
-    ...mapGetters(['app_height'])
+    ...mapGetters(['appHeight'])
   },
   methods: {
+    ...mapMutations(['set_appHeight']),
     onAppResize(){
-      this.$store.commit('set_appHeight', window.innerHeight);
+      this.set_appHeight(window.innerHeight)
     }
   },
   created(){
     console.log(this.$route)
-    
-   
   },
   mounted(){
     this.onAppResize();
     window.addEventListener('resize', this.onAppResize);
-    this.$eventBus.$on('refreshView', ()=> this.freshToken++ )
+    this.$eventBus.$on('refreshView', ()=> this.freshToken += 1);
   }
 }
 </script>

@@ -129,7 +129,7 @@
         </van-form>
         </div>
         <!-- <transition name="van-slide-right">
-            <div class="erji-view" :style="{height: app_height +'px'}" v-if="isErjiRoute">
+            <div class="erji-view" :style="{height: appHeight +'px'}" v-if="isErjiRoute">
                 <keep-alive>
                     <router-view @select_dept="select_dept" @select_skzh="select_skzh"></router-view>
                 </keep-alive>
@@ -175,7 +175,7 @@
                 },
                 set(val){}
             },
-            ...mapGetters(['app_height','bill_get_type']),
+            ...mapGetters(['appHeight','bill_get_type']),
             bill_type(){
                 return this.bill_get_type(this.$route.query.id);
             }

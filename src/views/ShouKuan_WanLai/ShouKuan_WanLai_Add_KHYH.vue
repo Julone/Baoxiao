@@ -1,6 +1,6 @@
 
 <template>
-    <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
+    <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="选择开户银行" left-text="返回" left-arrow @click-left="$emit('closed')" />
         <div class="main-content" ref="mainContent">
             <div style="width: 100%">
@@ -36,7 +36,7 @@
         },
 
         computed: {
-            ...mapGetters(['app_height']),
+            ...mapGetters(['appHeight']),
             yh_list(){
                 return this.list.filter(el => el.yhname.includes(this.keyword))
             }

@@ -1,8 +1,8 @@
 <template>
-    <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
+    <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="往来单位" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')">
             <template #right>
-                <van-button @click="show_wldw = true" color="white" icon="plus" size="small" bgless borderless>添加</van-button>
+                <van-button @click="show_wldw = true" type="info" plain icon="plus" size="small" bgless borderless>添加</van-button>
             </template>
         </van-nav-bar>
         <van-search v-model="keyword" placeholder="请输入往来单位关键词" @search="onSearch" @input="onSearch" />
@@ -18,13 +18,11 @@
                 w100
             >
             <van-swipe-cell v-for="(el,index) in list" :key="el.id">
-                <van-cell :class="{selected_cell: activeId == el.id}" clickable  @click="onCellClick(el)" >
+                <van-cell :class="{selected_cell: activeId == el.id,isUser: el.zhbj == 2}" 
+                clickable  @click="onCellClick(el)" >
                         <template #title>
-                            <div class="wldw-item">
-                                <!-- <van-icon name="shop-o" /> -->
-                                <!-- <van-icon name="hotel-o" /> -->
-                                <!-- <van-icon name="column" /> -->
-                                <van-icon name="hotel-o" size="21"/><span>{{el.zhmc}}</span>
+                            <div class="wldw-item " >
+                                <van-icon :name="el.zhbj == 2? 'user-o': 'hotel-o' " size="22"/><span>{{el.zhmc}}</span>
                             </div>
                         </template>
                         <template #extra>
@@ -40,10 +38,7 @@
             </van-swipe-cell>
 
             </van-list>
-            <!-- <div w100 v-if="list.length > 0">
        
-            </div> -->
-            <!-- <van-empty v-else description="暂无数据"></van-empty> -->
         </div>
           <van-popup :overlay="false" v-model="show_wldw" position="right" :style="{ width: '100%',height:'100%' }" :lock-scroll="!show_wldw">
             <transition name="van-fade">
@@ -79,7 +74,7 @@
         },
         props: ['formdata'],
         computed: {
-            ...mapGetters(['app_height']),
+            ...mapGetters(['appHeight']),
             isEditMode(){
                 return this.$route.query.mode == 'edit' || false
             },
@@ -93,17 +88,22 @@
                 return el
             },
             onSearch(){
-                bill_get_expense_wldw({
-                    keyword: this.keyword
-                }).then(r=>{
+                if(this.keyword) {
+                    bill_get_expense_wldw({
+                        keyword: this.keyword
+                    }).then(r=>{
+                        this.resetParams();
+                        this.list = r.data.map(this.handleData);
+                        this.finished = true
+                    })
+                }else {
                     this.resetParams();
-                    this.list = r.data.map(this.handleData);
-                })
+                }
             },
             onLoad(){
                return bill_get_expense_wldw({
                    page: this.page,
-                   limit: this.limit
+                   limit: this.limit,
                }).then(r => {
                     if (r.errcode == 0 && r.data.length == 0) {
                         this.finished = true
@@ -175,6 +175,7 @@
                 span{
                     margin-left: 5px;;
                 }
+               
             }
             .selected_cell{
                 background: #ecf5ff;

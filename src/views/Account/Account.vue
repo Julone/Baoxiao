@@ -28,7 +28,6 @@
                     <van-collapse-item v-show="acc.children.length" v-for="(acc,index) in accountList" :key="index"
                         :name="index" :title="acc.title">
                         <transition-group name="van-slide-left">
-                        
                         <van-swipe-cell v-for="(el) in acc.children" :key="el.id" :disabled="checkMode">
                             <div class="account-item-container" @click="onItemClick(el,acc, true)">
                                 <div class="account-item">
@@ -42,20 +41,26 @@
                                             <div class="flex">
                                                 {{el.expenseType}}
                                                 <van-tag v-if="el.zhbj == 1" plain type="primary"
-                                                    style="zoom:.8;margin-left:5px">对公</van-tag>
+                                                    style="zoom:.9;margin-left:5px">{{el.ywcj.mc}}</van-tag>
+                                                <van-tag v-if="el.cfbs" :plain="el.cfbs ==2" type="success"
+                                                    style="zoom:.9;margin-left:5px" >
+                                                    {{el.cfbs==1? '拆分': '拆分子项'}}
+                                                    </van-tag>
                                             </div>
-                                            <small style="color:#aaa">{{el.wanlai_danwei.zhmc}}</small>
+                                            <small style="color:#aaa">{{el.zhbj == 1?el.wanlai_danwei.zhmc: ''}}</small>
                                         </div>
                                     </div>
                                     <div class="right">
-                                        <div class="top"><small>¥</small>{{el.money}}</div>
+                                        <div class="top" v-if="el.cfbs != 1"><small>¥</small> {{el.ywcj.id == 7186? '0.00' : el.money}}</div>
+                                        <div class="top" v-if="el.cfbs == 1"><small>¥</small> {{el.zje - el.cfje | moneyFormat(2)}}</div>
+                                        <div class="bottom" v-if="el.zje">总 <small>¥</small>{{el.zje | moneyFormat(2)}}</div>
                                         <div class="bottom">消费时间 {{el.expenseTime }}</div>
                                     </div>
                                 </div>
                                 <div class="duigong" v-if="el.zhbj == 1">
                                     <div class="cell">
                                         <van-icon name="points" color="#1989fa" />
-                                        {{el.ywcj.id == 7184? '本期到票': '未到票'}}:
+                                        {{el.ywcj.id == 7184? '本期到票': el.ywcj.id == 7186 ?'核销金额':'未到票'}}:
                                         <span><small>¥</small>{{el.money}}</span>
                                     </div>
                                     <div class="cell">
@@ -133,6 +138,7 @@
         mapGetters
     } from 'vuex'
     export default {
+        name: 'account',
         data() {
             return {
                 refreshing: false,
@@ -199,26 +205,52 @@
                         this.$router.push({
                             path: '/account/bill/edit',
                             query: {
-                                dj_id: el.id,
-                                from_route: this.$route.name
+                                edit_id: el.id,
+                                from_route: this.$route.path
                             }
                         })
                     }
                 }
             },
 
-            onSelectDelete() {
-                this.$dialog.confirm({
-                    message: '确定要删除这些费用吗?',
-                    title: '删除',
-                }).then(r => {
-                    this.accountList = this.accountList.map(el => {
-                        el.children = el.children.filter(c => !c.checked)
-                        return el;
-                    });
+            // onSelectDelete() {
+            //     this.$dialog.confirm({
+            //         message: '确定要删除这些费用吗?',
+            //         title: '删除',
+            //     }).then(r => {
+            //         this.accountList = this.accountList.map(el => {
+            //             el.children = el.children.filter(c => !c.checked)
+            //             return el;
+            //         });
+            //         this.checkMode = false;
+            //     })
+            //     bill_del_danju(id).then(r => {
+            //         this.$toast.success('删除成功');
+            //         var i = this.rowList.findIndex(el => el.id == id);
+            //         if (i != -1) this.rowList.splice(i, 1);
+            //     }).catch(e => e).finally(() => {
+            //         this.handleViewData();
+            //     })
+            // },
+            onSelectDelete: dialogConfirm(function(){
+                // var id = el.children.filter(c => c.checked).map(el=>el.id);
+                // console.log(id);
+                var id = this.accountList.map(el => {
+                    return el.children.filter(c => c.checked).map(ele=>ele.id).join(',');
+                }).filter(el=>el.length)
+                bill_del_danju(id.join(',')).then(r => {
+                    this.$toast.success('删除成功');
+                    id.forEach(el => {
+                        var i = this.rowList.findIndex(ele => ele.id == el);
+                        if (i != -1){
+                            this.rowList.splice(i, 1)
+                        };
+                    })
                     this.checkMode = false;
+                }).catch(e => e).finally(() => {
+                    this.handleViewData();
                 })
-            },
+            }, { message: '确定要删除这些费用吗?', title: '删除', }),
             onSelectAll(tag) {
                 this.accountList.forEach((acc) => {
                     acc.children.forEach((child) => {
@@ -235,7 +267,8 @@
 
             handleViewData() {
                 var data = this.rowList.reduce((t, ele) => {
-                    var key = dateFormat(ele.rq, 'yyyy-MM-dd');
+                    var rq = this.filterOptions.sortable == 0? ele.zdrq : ele.rq;
+                    var key = dateFormat(rq, 'yyyy-MM-dd');
                     t[key] ? t[key].children.push(ele) : (t[key] = {
                         title: key,
                         children: [ele]
@@ -250,7 +283,7 @@
                 ele.money = Number(ele.je).toFixed(2);
                 ele.checked = false;
                 ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
-                ele.icon = 'balance-o';
+                ele.icon = ele.zhbj == 1? 'hotel-o' :'user-o';
                 return ele;
             },
             onLoad() {
@@ -378,29 +411,22 @@
                 overflow: hidden;
 
                 .duigong {
-                    width: 90%;
+                    width: 88%;
                     padding: 2.66667vw;
                     .flex(@j: space-between; );
                     box-sizing: border-box;
                     float: right;
                     font-size: .8em;
-                    border-top: 1px solid rgba(128, 128, 128, 0.143);
-                    padding-left: 20px;
-
+                    border-top: 1px dashed rgba(128, 128, 128, 0.1);
+                    padding-left: 2%;
                     .cell {
                         .flex();
-
                         &>i {
                             margin-right: 4px;
-                            ;
                         }
-
                         &>span {
                             margin-left: 5px;
-                            ;
                         }
-
-                        // letter-spacing: 1px;
                     }
                 }
 

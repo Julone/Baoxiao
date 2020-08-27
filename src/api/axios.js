@@ -25,8 +25,8 @@ var axiosBase = Axios.create(axiosInitialConfig);
 // HTTPrequest拦截
 axiosBase.interceptors.request.use(config => {
   NProgress.remove();
-  NProgress.start() // start progress bar;
-  return config
+  NProgress.start(); // start progress bar;
+  return config;
 }, error => {
   return Promise.reject(error)
 })
@@ -38,12 +38,7 @@ axiosBase.interceptors.response.use(res => {
   const errmsg = res.data.errmsg || '抱歉, 垃圾服务器崩溃了~';
   const errcode = res.data.errcode;
   if (errcode != 0 || status != 200) {
-    
-    if (errcode == 401 || errcode == 402) {
-      router.push('/login');
-    }else{
-      Toast({ message: errmsg, forbidClick: true, duration: 1000 });
-    }
+  Toast({ message: errmsg + "\n\n" + JSON.stringify(res.data), type: 'fail', forbidClick: false, duration: 4000 ,className: 'apiError'});
     return Promise.reject(res.data.errmsg);
   } else {
     return Promise.resolve(res.data);
@@ -62,7 +57,7 @@ export const axiosByFormData = (params) => {
   }
   return axiosBase(Object.assign(params, config))
 }
-export const axiosJson = (params) => {
+export const axiosByJSON = (params) => {
   var config = {
     data: params.data
   }

@@ -5,7 +5,7 @@ export default {
     meta: {
         openTabbar: true,
         keepAlive: true,
-        savedPosition: {x:0,y:0}
+        savedPosition: {x:0,y:0},
     },
     children: [
     

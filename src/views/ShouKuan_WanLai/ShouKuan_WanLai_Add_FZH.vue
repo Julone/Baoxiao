@@ -1,6 +1,6 @@
 
 <template>
-    <div class="wanlai-danwei-container" :style="{height: app_height +'px'}">
+    <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="选择分支行" left-text="返回" left-arrow @click-left="$emit('closed')" />
         <div class="main-content">
             <div style="width: 100%">
@@ -39,7 +39,7 @@
             curTypeList() {
                 return this.typeList[this.activeKey]
             },
-            ...mapGetters(['app_height'])
+            ...mapGetters(['appHeight'])
         },
         methods: {
             onLoad() {

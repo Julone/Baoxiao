@@ -2,10 +2,9 @@
   <div class="home_container">
     <header>
       <div class="h_title">
-        <div transparent>LILANZ</div>
+        <div transparent></div>
         <span>首页</span>
-        <accountPicker class="account-picker" white size="mini" ></accountPicker></div>
-
+        <accountPicker :maxlen='6' class="account-picker" white size="mini" ></accountPicker></div>
       <div class="h_button_group">
         <div class="h_button" @click="onHbtnClick(el)" v-for="el in h_button" :key="el.icon">
           <div class="icon">
@@ -23,17 +22,15 @@
         <van-grid-item icon="paid" text="第三方消费" />
       </van-grid> -->
     </main>
+    <van-cell class="marginTop" title="清除缓存" @click="appClearCache()" clickable is-link icon="delete">
+    </van-cell>
 
   </div>
 </template>
 <script>
+import {mapActions, mapGetters} from 'vuex'
   export default {
-    methods: {
-      onHbtnClick(el){
-        if(el.disabled) return this.$toast('正在维护');
-        this.$router.push(el.to);
-      }
-    },
+    
     data() {
       return {
         h_button: [{
@@ -62,8 +59,18 @@
         ]
       }
     },
+    computed: {
+      ...mapGetters(['userinfo'])
+    },
+    methods: {
+      ...mapActions(['appAuthStart','appClearCache']),
+      onHbtnClick(el){
+        if(el.disabled) return this.$toast('正在维护');
+        this.$router.push(el.to);
+      },
+    },
     created(){
-       this.$store.dispatch('appStart', this.$route.query.apptoken);
+      this.appAuthStart({apptoken: this.$route.query.apptoken});
     }
   }
 </script>
