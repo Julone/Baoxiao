@@ -55,7 +55,7 @@ export default {
   actions: {
     auth_getUserInfo({ state, commit, dispatch }, apptoken) {
       if (validatenull(state.userinfo)) {
-        apptoken = process.env.NODE_ENV == "development" ? "4c8f9c243b7954cd" : apptoken;
+        apptoken = process.env.NODE_ENV == "development" ? "a5eadf424fde93a" : apptoken;
         return auth_get_user_info(apptoken)
           .then((r) => {
             commit("SET_APPTOKEN", apptoken);

@@ -35,7 +35,7 @@
                         <div class="right">
                             <span class="fp-title">{{fapiao.templateName}}</span>
                             <span class="date">{{fapiao.invoice_date | date('yyyy年MM月dd日')}}</span>
-                            <span class="seller">时间: {{fapiao.Time}}</span>
+                            <span class="seller">{{fapiao.Time || '未知时间'}}</span>
                         </div>
                     </template>
                     <template v-else-if="fapiao.templateSign=='train_ticket'" type="火车票">
@@ -43,6 +43,13 @@
                             <span class="fp-title">{{fapiao.templateName}}</span>
                             <span class="date">始发地: {{fapiao.starting_station}}</span>
                             <span class="seller">目的地: {{fapiao.destination_station}}</span>
+                        </div>
+                    </template>
+                    <template v-else-if="fapiao.templateSign=='travel_itinerary'" type="行程单">
+                        <div class="right">
+                            <span class="fp-title">{{fapiao.templateName}}</span>
+                            <span class="date">{{fapiao.invoice_date | date('yyyy年MM月dd日')}}</span>
+                            <span class="seller">{{fapiao.issued_by}}</span>
                         </div>
                     </template>
                     <template v-else>
@@ -105,12 +112,12 @@
         <van-popup v-model="showDialog" safe-area-inset-bottom get-container="body" position="bottom"
             :style="{ height: '90%' }" @open="asyncVerify()">
             <van-form class="fapiao-detail" v-if="rowJSON">
-                <h3 class="fapiao-title" align="center" marginTop>{{fapiao.templateName}}
+                <h3 class="fapiao-title" align="center">{{fapiao.templateName}}
                     <span v-if="fapiao.fplx_name">
                         ({{fapiao.fplx_name}})
                     </span>
                 </h3>
-                <template v-if="templateIncludes(['vat_invoice', 'roll_ticket'])">
+                <template v-if="rowJSON.fpxx">
                     <div class="baseInfo cardBox" marginTop title="基本信息">
                         <van-cell title="发票代码">{{rowJSON.fpxx.fpdm}}</van-cell>
                         <van-cell title="发票号码">{{rowJSON.fpxx.fphm}}</van-cell>
@@ -151,9 +158,9 @@
                     </div>
                 </template>
                 <template v-else>
-                     <div class="baseInfo cardBox" marginTop title="基本信息">
-                           <van-cell :title="el.word_name" v-for="el in rowJSON" :key="el.word_name">{{el.word}}</van-cell>
-                     </div>
+                    <div class="baseInfo cardBox" marginTop title="基本信息">
+                        <van-cell :title="el.word_name" v-for="el in rowJSON" :key="el.word_name">{{el.word}}</van-cell>
+                    </div>
                 </template>
                 <!-- <pre style="font-size:80%">
                     {{fapiao}}
@@ -215,11 +222,11 @@
                     bill_check_fapiao(this.fapiao).then(r1 => {
                         this.rowJSON = JSON.parse(r1.data.rowJSON).message.content[0];
                     }).catch(e => {
+                        this.rowJSON = JSON.parse(this.fapiao.rowJSON).ret;
                         this.fapiao.cybs = false;
                     })
                 } else {
-                    var json = JSON.parse(this.fapiao.rowJSON);
-                    this.rowJSON = json.ret;
+                    this.rowJSON = JSON.parse(this.fapiao.rowJSON).ret;
                 }
             },
             onFapiaoClick() {
@@ -351,7 +358,9 @@
 
         .fapiao-title {
             color: #4c4c4c;
-            padding: 5px 0;
+            padding:15px 0;
+            position: sticky;
+            top: 0;
         }
 
         .cardBox {
