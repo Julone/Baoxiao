@@ -6,6 +6,13 @@ export default {
         },
         {
             validator: (value, rule) => {
+              return Number(value) <  Number.MAX_SAFE_INTEGER;
+            },
+            message: '金额过大, 请修改金额!',
+            trigger: 'onBlur'
+        },
+        {
+            validator: (value, rule) => {
                 var i = value.indexOf('.');
                 if (i != -1) {
                     return value.substr(i + 1).length <= 2
@@ -48,5 +55,15 @@ export default {
         },
     ],
     wanlai_danwei: [{ required: true, message: '请输入往来单位',trigger:'onChange' }],
-    expenseType:[{ required: true, message: '请选择消费类型',trigger:'onChange' }]
+    expenseType:[{ required: true, message: '请选择消费类型',trigger:'onChange' }],
+    beizhu: [{ pattern: /^[\s\S]{0,300}$/, message: '留言太长',trigger:'onBlur' }],
+    fyList: [
+        {
+            validator: (value, rule) => {
+               return Number(value) >= 1
+            },
+            message: '请选择费用明细项目！',
+            trigger: 'onBlur'
+        },
+    ]
 }

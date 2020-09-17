@@ -2,23 +2,17 @@
     <div class="danju-type-container" >
         <van-nav-bar title="请选择单据类型" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <div class="main-content">
-            <van-collapse v-model="activeCollpase" style="width:100%">
-                <van-collapse-item v-for="el in collapseList" :key="el.title" :title="el.title" :name="el.id">
-                    <van-cell v-for="d in el.children" :key="d.id" :to="{name: 'bill_get_new', query:{id: d.id}}"
-                        is-link>
-                        <van-button type="info" size="mini" icon="balance-list-o"></van-button>
-                        {{d.mc}}
-                    </van-cell>
-                </van-collapse-item>
-            </van-collapse>
+            <van-cell v-for="el in collapseList" :key="el.id" @click="toDanju(el)" is-link>
+                <van-button marginRight slot="icon" type="info" size="mini" icon="balance-list-o"></van-button>
+                <div slot="title">{{el.mc}}</div>
+            </van-cell>
         </div>
     </div>
 </template>
 <script>
+
     import {
-        bill_get_ywcj
-    } from 'api'
-    import {
+      mapActions,
         mapGetters,
         mapState
     } from 'vuex'
@@ -27,7 +21,6 @@
         data() {
             return {
                 activeCollpase: [],
-                // collapseList: []
             }
         },
         computed: {
@@ -37,16 +30,19 @@
             ...mapGetters(['bill_get_type']),
         },
         methods: {
-            
-
+            ...mapActions(['bill_get_fetchType']),
+            toDanju(el){
+                this.$router.push({
+                    name: 'bill_get_new', 
+                    query:{
+                        type_id: el.id,
+                        fyList: this.$route.query.fyList
+                    }
+                })
+            }
         },
-
-  
         created() {
-            console.log(this.bill_get_type(1001));
-            // this.collapseList = [
-            // ];
-            this.activeCollpase = this.collapseList.map(el=>el.id);
+            this.bill_get_fetchType()
         }
     }
 </script>

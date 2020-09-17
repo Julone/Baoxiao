@@ -1,7 +1,9 @@
 export default {
     path: '/',
     name: 'home',
-    component: () => import('@/views/Home/Home.vue'),
+    components: {
+        default:  () => import('@/views/Home/Home.vue'),
+    },
     meta: {
         openTabbar: true,
     }

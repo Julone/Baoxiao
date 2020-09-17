@@ -2,7 +2,7 @@
     <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="往来单位" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')">
             <template #right>
-                <van-button @click="show_wldw = true" type="info" plain icon="plus" size="small" bgless borderless>添加</van-button>
+                <van-button @click="onAdd" type="info" plain icon="plus" size="small" bgless borderless>添加</van-button>
             </template>
         </van-nav-bar>
         <van-search v-model="keyword" placeholder="请输入往来单位关键词" @search="onSearch" @input="onSearch" />
@@ -40,16 +40,16 @@
             </van-list>
        
         </div>
-          <van-popup :overlay="false" v-model="show_wldw" position="right" :style="{ width: '100%',height:'100%' }" :lock-scroll="!show_wldw">
+          <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" :lock-scroll="!show_wldw">
             <transition name="van-fade">
-                <wanlai-danwei is_wldw @save_done="save_done" ></wanlai-danwei>
+                <router-view is_wldw @save_done="save_done" @remove_done="remove_done"></router-view>
             </transition>
         </van-popup>
     </div>
 </template>
 <script>
     import {
-        bill_get_expense_wldw,
+        bill_get_wldw,
         skzh_del_by_id
     } from 'api'
     import {
@@ -80,7 +80,15 @@
             },
             activeId(){
                 return !this.isEditMode && this.formdata? this.formdata.wanlai_danwei.id: null
-            }
+            },
+            isErjiRoute: {
+                get(){
+                    return this.$route.path.includes('/wanlai_danwei/add')
+                },
+                set(){
+                    
+                }
+            },
         },
         methods: {
             handleData(el){
@@ -89,7 +97,7 @@
             },
             onSearch(){
                 if(this.keyword) {
-                    bill_get_expense_wldw({
+                    bill_get_wldw({
                         keyword: this.keyword
                     }).then(r=>{
                         this.resetParams();
@@ -101,7 +109,7 @@
                 }
             },
             onLoad(){
-               return bill_get_expense_wldw({
+               return bill_get_wldw({
                    page: this.page,
                    limit: this.limit,
                }).then(r => {
@@ -122,14 +130,21 @@
                 this.page = 1;
                 this.finished = false;
             },
+            onAdd(){
+                this.show_wldw = true;
+                this.$router.push({path: './wanlai_danwei/add'})
+            },
             save_done(data){
                 this.resetParams();
-                // this.onLoad();
-                this.show_wldw = false;
+                this.$store.dispatch('appGoback')
+            },
+            remove_done(){
+                this.resetParams();
+                this.$store.dispatch('appGoback')
             },
             onCellClick(el){
                 if(this.isEditMode) {
-                    return;
+                    return this.$router.push({path: './wanlai_danwei/add', query: {mode: 'edit',id: el.id}});
                 } 
                 this.$emit('chooseWldw',el)
             },

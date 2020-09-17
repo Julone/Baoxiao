@@ -33,9 +33,10 @@ export default {
             actions: {
                 async init_expenseType({commit, state}, force = false){
                     if(state.list.length > 0 && !force) return console.log('费用类型列表已加载!');
-                    var rowList = await bill_get_expense_type().then(r => r.data ).catch(e => [])
-                    await commit('SET_LIST',rowList);
-                    console.log('现在的费用类型列表: ', state.list);
+                    return bill_get_expense_type().then(r => {
+                        commit('SET_LIST',r.data)
+                        console.log('现在的费用类型列表: ', state.list);
+                    })
                 }
             }
         }

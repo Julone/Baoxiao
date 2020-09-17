@@ -1,14 +1,13 @@
 <template>
-    <div>
+    <div class="app-account-switch">
         <van-button native-type="button" :size="size" borderless bgless :round="round" 
             type="info" :plain="!white" @click="onClick" :style="{zoom: zoom * 1}">
-            <span v-if="activeAccount.khmc" class="flex" nowrap>
-               {{activeAccount.khmc | subStr(0,maxlen * 1)}}
-               <span v-if="activeAccount.khmc && activeAccount.khmc.length > maxlen * 1">...</span>
-                <van-icon v-if="!disabled" name="arrow-down" size="3vw" style="margin-left:1vw"/>
-            </span>
-            <span v-else class="flex" nowrap>
-                暂无套账 <van-icon name="arrow-down" size="3vw" style="margin-left:1vw"/>
+            <span class="flex" nowrap>
+                <span v-if="activeAccount.khmc" :class="{'t-overflow': activeAccount.khmc.length > maxlen * 1}" >
+                    {{activeAccount.khmc | subStr(0,maxlen * 1)}}
+                </span>
+                <span v-else class="flex" nowrap>暂无套账</span>
+                <van-icon v-if="!disabled"  name="arrow-down" size="3vw" style="margin-left:1vw"/>
             </span>
         </van-button>
         <van-popup v-model="show" @open="openPopup" safe-area-inset-bottom get-container="body" position="bottom" :lazy-render="false">
@@ -29,12 +28,13 @@
 <script>
     import {
         mapGetters,
-        mapState
+        mapState,
+        mapMutations
     } from 'vuex'
     export default {
         data() {
             return {
-                show: false,
+               
                 refreshToken: 0,
                 keyword: '',
                 cIndex: 0
@@ -67,7 +67,7 @@
             }
         },
         computed: {
-            ...mapGetters(['accountList', 'activeAccount']),
+            ...mapGetters(['accountList', 'activeAccount', 'accountPickerStatus']),
             accountColumns() {
                 var keyword = this.keyword.toUpperCase();
                 return this.accountList.filter(el => el.text && (el.text + el.pinyin).includes(keyword))
@@ -76,13 +76,17 @@
                 var index = this.accountColumns.findIndex(acc => acc.data.khid == this.activeAccount.khid);
                 return index == -1? 0 : index;
             },
-            ...mapState({
-                isUserInfoLoading: s=>{
-                    return s.auth.isUserInfoLoading
+            show: {
+                get(){
+                    return this.accountPickerStatus
+                },
+                set(val){
+                    this.set_accountPickerStatus(val);
                 }
-            })
+            }
         },
         methods: {
+            ...mapMutations(['set_accountPickerStatus']),
             async openPopup(){
                 await this.$nextTick();
                 console.log('popup', this.activeIndex);
@@ -110,3 +114,12 @@
         }
     }
 </script>
+<style lang="less">
+.app-account-switch{
+    .t-overflow{
+   mask-image: linear-gradient(to right, white 10px, white 75%, transparent)
+}
+
+}
+
+</style>

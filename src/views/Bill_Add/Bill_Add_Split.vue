@@ -1,7 +1,7 @@
 <template>
     <div class="split_container" ref="ftContainer" >
         <van-nav-bar title="费用拆分" fixed placeholder left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
-        <div class="main" ref="main">
+        <div class="main" ref="main" >
             <van-cell-group>
                 <div slot="title">
                     拆分总金额: <a class="blue-text"><small>￥</small>{{split_parent.zje | moneyFormat(2)}}</a>
@@ -21,7 +21,7 @@
                 </van-cell>
             </van-cell-group>
             <!-- {{split_list}} -->
-            <van-form ref="form" style="position:relative" :show-error="false" :show-error-message="show_error"
+            <van-form ref="form" style="position:relative" :show-error="false" :show-error-message="show_error" v-cloak
                 novalidate>
                 <van-divider style="padding:5vw 0" v-if="split_list.length ==0">暂无拆分, 请添加拆分</van-divider>
               
@@ -74,7 +74,7 @@
         dialogConfirm,
         randomString
     } from '@/utils/utils'
-    import {bill_edit_get_danjuInfo} from 'api'
+    import {bill_get_feiyongInfo} from 'api'
     export default {
         name: 'bill_split',
         data() {
@@ -85,15 +85,17 @@
                 split_parent: {}
             }
         },
-        props: ['formdata'],
+        // props: ['formdata'],
+        props: {
+            formdata:{
+                required: true
+            },
+            url_prefix:{
+                default: ''
+            }
+        },
         computed: {
             ...mapGetters(['appHeight', 'regRules']),
-            isErjiRoute: {
-                get() {
-                    return this.$route.path.startsWith('/bill/add/fentang/')
-                },
-                set(val) {}
-            },
             curSum() {
                 return this.split_list.reduce((t, el) => {
                     t = accAdd(t, el.cdje);
@@ -117,7 +119,7 @@
             }),
             onEditSplit(item) {
                  var params = {
-                    path: '/bill/add',
+                    path: this.url_prefix + '/bill/add',
                     query: {
                         split_id: this.split_id,
                     }
@@ -125,18 +127,22 @@
                 if(item.id) {
                     params.query.edit_id= item.id
                 }
-                this.$router.push(params);
+                this.$router.push(params).then(r=>{
+                    this.$eventBus.$emit('refreshView')
+                })
             },
             onAddSplit(){
-                this.$router.push({
-                    path: '/bill/add',
+                this.$router.replace({
+                    path: this.url_prefix + '/bill/add',
                     query: {
-                        split_id: this.split_id,
+                        split_id: this.split_id
                     }
-                });
+                }).then(r=>{
+                    this.$eventBus.$emit('refreshView')
+                })
             },
             getSplitInfo(){
-                bill_edit_get_danjuInfo(this.split_id).then(r=>{
+                bill_get_feiyongInfo(this.split_id).then(r=>{
                 console.log(r);
                 this.split_list= r.data.cf_list.filter(el => el.cfbs == 2);
                 this.split_parent = r.data.cf_list.find(el => el.cfbs == 1);

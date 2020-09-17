@@ -5,17 +5,15 @@
             <van-cell class="sticky" style="top:0">
                 <template #title>
                     <div>
-                        1条费用，金额 ￥{{ft_money}}
+                        1条费用，金额: <bill-money blue-text>{{ft_money}}</bill-money>
                     </div>
                 </template>
-                <a class="blue-text" @click="avgMoney"> 平均分摊</a>
+                <a class="blue-text" @click="avgMoney">平均分摊</a>
             </van-cell>
-            <!-- {{fentang_list}} -->
-            <van-form ref="form" style="position:relative" :show-error="false" :show-error-message="show_error"
-                novalidate>
+            <van-form ref="form" :show-error="false" :show-error-message="show_error" novalidate>
                 <van-divider style="padding:5vw 0" v-if="fentang_list.length ==0">暂无分摊, 请添加分摊</van-divider>
-                <transition-group name="van-slide-right" mode="out-in" >
-                    <div style="width: 100%" v-for="(el,index) in fentang_list" :key="el.id">
+                <transition-group  mode="out-in" enter-active-class="van-fade-enter-active" name="van-slide-right" appear >
+                    <div style="width: 100%;" class="ft-item" v-for="(el,index) in fentang_list" :key="el.id">
                         <div class="ft_title"><span>分摊({{index+1}}) {{el.id}}</span>
                             <van-button native-type="button" size="small" bgless borderless icon="delete"
                                 @click="removeItem(el.id)">
@@ -51,16 +49,17 @@
                         </van-field>
                     </div>
                 </transition-group>
-
-
-                <van-cell-group class="marginTop" v-if="fentang_list.length > 0">
-                    <van-button native-type="button" type="danger" @click="removeAll()" plain borderless block>删除全部
-                    </van-button>
-                </van-cell-group>
+               
+                <transition name="van-slide-up">
+                    <van-cell-group class="marginTop" v-if="fentang_list.length > 0">
+                        <van-button native-type="button" type="danger" @click="removeAll()" plain borderless block>删除全部
+                        </van-button>
+                    </van-cell-group>
+                </transition>
 
                 <van-row class="marginTop marginBottom">
                     <van-col span="12" class="border-right">
-                        <van-button native-type="button" type="info" @click="addFengtangOne()" plain borderless block>
+                        <van-button native-type="button" type="primary" @click="addFengtangOne()" plain borderless block>
                             添加分摊</van-button>
                     </van-col>
                     <van-col span="12">
@@ -68,10 +67,11 @@
                             block>多选分摊</van-button>
                     </van-col>
                 </van-row>
+             
             </van-form>
 
             <!-- 底部保存 -->
-            <div class="van-tabbar--fixed bottom_saved_buttons">
+            <div class="van-tabbar--fixed bottom_saved_buttons" style="position: absolute;">
                 <van-row>
                     <van-col span="12">
                         <van-button @click="$store.dispatch('appGoback')" native-type="button" type="default" borderless
@@ -85,8 +85,8 @@
                 </van-row>
             </div>
         </div>
-        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }">
-            <transition name="van-fade">
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right"  class="popup-fullsize" :lock-scroll="!isErjiRoute" >
+             <transition leave-active-class="van-fade-leave-active">
                 <router-view :fentang_list="fentang_list" :activeItem="activeItem" @select-dept="selectDept"
                     @select-multiple-dept="selectMultipleDept" :rq="formdata.dprq"></router-view>
             </transition>
@@ -116,12 +116,20 @@
                 show_error: true
             }
         },
-        props: ['formdata'],
+        props: {
+            'formdata': {
+                required: true
+            },
+             'urlPrefix': {
+                 default: '',
+                required: true
+             }
+        },
         computed: {
             ...mapGetters(['appHeight', 'regRules']),
             isErjiRoute: {
                 get() {
-                    return this.$route.path.startsWith('/bill/add/fentang/')
+                    return this.$route.path.includes(this.urlPrefix + 'fentang/')
                 },
                 set(val) {}
             },
@@ -162,14 +170,13 @@
                 item.cdje = (this.ft_money * 0.01 * item.cdbl).toFixed(2);
             },
 
-
-
             removeItem: dialogConfirm(function (id) {
                 var index = this.fentang_list.findIndex(el => el.id == id)
                 index != -1 && this.fentang_list.splice(index, 1);
             }),
             removeAll: dialogConfirm(function () {
                 this.fentang_list = [];
+                this.$scrollTopTo(this.$refs.ftContainer, 0 ,0);
             }, {
                 title: '删除全部',
                 message: '是否删除全部?'
@@ -226,7 +233,7 @@
             },
             async addFengtangMultiple() {
                 this.$router.push({
-                    path: this.$route.path + '/bill_add_dept',
+                    path: this.urlPrefix + 'fentang/bill_add_dept',
                     query: {
                         multiple: true
                     }
@@ -235,7 +242,7 @@
             onDeptClick(item) {
                 this.activeItem = item;
                 this.$router.push({
-                    path: this.$route.path + '/bill_add_dept',
+                    path: this.urlPrefix + 'fentang/bill_add_dept',
                     query: {
                         breadcrumb: item.breadcrumb,
                         keyword: item.keyword
@@ -243,13 +250,22 @@
                 });
             },
             async addFengtangOne() {
-                this.fentang_list.push({
+                var obj = {
                     cdje: 0,
                     cdbl: 0,
                     cdbm: {},
                     focus: false,
                     id: randomString()
-                });
+                }
+                this.fentang_list.push(obj);
+                this.scrollToLastItem();
+        
+            },
+            async scrollToLastItem(){
+                await this.$nextTick();
+                var t = document.querySelector('.ft-item:last-child');
+                console.log(t);
+                this.$scrollTopTo(this.$refs.ftContainer, t.offsetTop ,300);
             },
             selectDept({
                 dept,
@@ -259,6 +275,7 @@
                 if (this.activeItem == -1) this.$store.dispatch('appGoback');
                 this.activeItem.cdbm = dept;
                 this.activeItem.breadcrumb = breadcrumb
+                this.activeItem.keyword= keyword
                 this.$store.dispatch('appGoback')
             },
             async selectMultipleDept({
@@ -280,6 +297,7 @@
                         keyword: keyword
                     });
                 })
+                this.scrollToLastItem();
             }
         },
         created() {
@@ -296,7 +314,6 @@
         overflow: auto;
         overflow-x: hidden;
         background-color: rgb(240, 242, 245);
-
         .bcdp-item {
             width: 100%;
             .flex(@j: space-between);
@@ -321,14 +338,8 @@
                 color: rgb(202, 203, 206);
             }
         }
-
-        .van-form {
-            min-height: calc(100vh - 40vw);
-        }
-
-        .bottom_saved_buttons {
-            position: sticky;
-            padding-bottom: 10px;
+        .van-form{
+            padding-bottom: 25vw;
         }
     }
 </style>

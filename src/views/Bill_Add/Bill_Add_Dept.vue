@@ -1,5 +1,5 @@
 <template>
-    <div class="wanlai-danwei-container" :style="{height: appHeight +'px'}">
+    <div class="department-container" :style="{height: appHeight +'px'}">
         <van-nav-bar title="部门选择" left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
         <van-search v-model="keyword" @input="onSearch" @search="onSearch"></van-search>
         <div class="breadcrumb">
@@ -20,17 +20,10 @@
                         <van-checkbox slot="icon" shape="square" :disabled="el.hasChecked" v-model="el.checked"
                             style="margin-right:10px" />
                         <van-button @click.stop="openSubDept(el)" native-type="button" slot="right-icon" size="mini"
-                            icon="cluster-o" v-if="el.lx == 2">下级</van-button>
+                            icon="cluster-o" v-if="el.lx == 2 && !keyword">下级</van-button>
                     </van-cell>
                 </van-list>
-            </div>
-        </div>
-        <div class="van-tabbar--fixed bottom_saved_buttons" v-if="multiple">
-            <!-- <van-row>
-                  <van-col span="24">
-                      {{ selectedDept }}
-                  </van-col>
-            </van-row> -->
+                    <div class="van-tabbar--fixed bottom_saved_buttons" v-if="multiple" style="position:absolute;z-index:100">
             <van-row>
                 <van-col span="24">
                     <van-button @click="onMultipleClick()" native-type="button" type="info" borderless block>创建分摊
@@ -38,6 +31,9 @@
                 </van-col>
             </van-row>
         </div>
+            </div>
+        </div>
+    
     </div>
 </template>
 <script>
@@ -106,7 +102,8 @@
         methods: {
             onRootClick() {
                 this.breadcrumb = [];
-                this.cur_id = 0;
+                this.cur_id = "";
+                this.keyword = "";
                 this.initParams();
             },
             onTagClick(el, index) {
@@ -114,6 +111,7 @@
                 this.openSubDept(el);
             },
             openSubDept(el) {
+                this.keyword && (this.keyword = "");
                 this.breadcrumb.push({
                     id: el.id,
                     name: el.name
@@ -140,12 +138,13 @@
                 } else {
                     var id = this.activeItem.cdbm ? this.activeItem.cdbm.id : null;
                     el.checked = el.id == id || this.haveSelectedDept.includes(el.id);
-
                 }
                 return el;
             },
             onCellClick(el) {
                 console.log(el);
+                el.breadcrumb = JSON.stringify(this.breadcrumb),
+                el.keyword = this.keyword
                 if (this.multiple) {
                     if (!el.hasChecked) {
                         el.checked = !el.checked;
@@ -193,9 +192,9 @@
             }
         },
         created() {
+            this.keyword = this.$route.query.keyword;
             if (this.$route.query.breadcrumb) {
                 try {
-                    this.keyword = this.$route.query.keyword;
                     this.breadcrumb = JSON.parse(this.$route.query.breadcrumb);
                     if (this.breadcrumb.length > 0) {
                         var lastIndex = this.breadcrumb.length - 1;
@@ -209,7 +208,7 @@
     }
 </script>
 <style lang="less">
-    .wanlai-danwei-container {
+    .department-container {
         // .flex(@d:column;@j:space-around);
         height: 100vh;
         display: flex;
@@ -242,6 +241,9 @@
             flex: 1;
             height: 100%;
             overflow: scroll;
+           .van-list{
+                padding-bottom: 15vw;
+           }
             .van-cell__label{
                 margin-top: 0;;
                 line-height: 14px;

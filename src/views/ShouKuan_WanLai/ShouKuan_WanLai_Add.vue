@@ -55,13 +55,13 @@
                         <van-col span="8">
                             <van-button type="" native-type="button"
                             @click="removeItem()"
-                             borderless block>
+                             borderless block icon="delete">
                                 移除
                             </van-button>
                         </van-col>
                         <van-col span="1" ></van-col>
                         <van-col span="15">
-                            <van-button type="info" borderless block>
+                            <van-button type="info" borderless block icon="success">
                                 保存
                             </van-button>
                         </van-col>
@@ -126,9 +126,9 @@
             },
             c_title(){
                 if(this.is_wldw) {
-                    return '添加往来单位'
+                    return (this.is_editmode? '修改': '添加') + '往来单位';
                 }else {
-                    return this.is_editmode? '修改收款账号': '添加收款账号'
+                    return (this.is_editmode? '修改': '添加') + '收款账号'
                 }
             }
         },
@@ -170,7 +170,7 @@
                     })
                     .then(() => {
                         return skzh_del_by_id(this.query_id).then(r => {
-                            this.$toast.success('删除成功');
+                            this.$toast.success('删除成功!');
                             this.$emit('remove_done')
                         }).catch(e => e)
                     })
@@ -182,7 +182,7 @@
                 var data = this.form;
                 if(this.is_editmode) data.update_id = this.query_id;
                 skzh_set_skzh_or_wldw(data,this.is_wldw).then(r=>{
-                    this.$toast.success('添加成功!')
+                    this.$toast.success(this.c_title + '成功!')
                     this.$emit('save_done');
                 })
             }
@@ -193,14 +193,7 @@
                     console.log(r)
                     this.form = r.data;
                 })
-
             }
-
-
-        },
-
-        activated() {
-
         },
     }
 </script>

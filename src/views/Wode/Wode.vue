@@ -21,8 +21,10 @@
             <van-divider marginless></van-divider>
             <van-cell-group title="数据管理">
                 <van-cell icon="debit-pay" is-link title="收款账号" :to="{path:'/wode/bill_get_skzh',query:{mode:'edit'}}"></van-cell>
-                <van-cell icon="exchange" is-link title="往来单位" :to="{path:'/wode/bill_add_wanlai_danwei',query:{mode:'edit'}}">
-                </van-cell>
+                <van-cell icon="exchange" is-link title="往来单位" :to="{path:'/wode/wanlai_danwei',query:{mode:'edit'}}"> </van-cell>
+            </van-cell-group>
+            <van-cell-group title="发票导入">
+                <wx-fapiao-import></wx-fapiao-import>
             </van-cell-group>
             <van-cell-group title="系统设置">
                 <van-cell title="用户身份" icon="contact">
@@ -59,6 +61,9 @@
                 developMode: false,
             }
         },
+        components: {
+            wxFapiaoImport:()=>import('./Wode_WxFapiao.vue')
+        },
         computed: {
             isErjiRoute: {
                 get() {
@@ -83,11 +88,11 @@
         },
         methods: {
             ...mapActions(['appAuthStart','appClearCache', 'appExit']),
-           
             onCopy(data) {
                 copyText(data);
                 this.$toast.success('复制成功')
-            }
+            },
+            
         },
         created() {
 
@@ -113,7 +118,7 @@
 
         .van-cell-group__title {
             padding: 10px 15px 7px;
-            font-size: 80%;
+            font-size: 12px;
         }
 
     }

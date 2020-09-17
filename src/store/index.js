@@ -19,16 +19,31 @@ var store = new Vuex.Store({
   state: {
     appHeight: 0,
     appRefreshToken: 0,
-    regRules: regRules
+    regRules: regRules,
+    accountPickerStatus: false 
+  },
+  getters: {
+    appHeight: state => state.appHeight,
+    regRules: state => state.regRules,
+    appRefreshToken: state => state.appRefreshToken,
+    accountPickerStatus: state => state.accountPickerStatus
   },
   mutations: {
     set_appHeight(state, appHeight){
       state.appHeight = appHeight;
+    },
+    set_accountPickerStatus(state, accountPickerStatus){
+      state.accountPickerStatus = accountPickerStatus;
     }
   },
   actions: {
     appGoback({state}){
-      router.go(-1);
+      return new Promise((res,rej)=>{
+        router.go(-1);
+        setTimeout(()=>{
+          res(1) 
+        }, 300)
+      });
     },
     appAuthStart({dispatch, commit}, {apptoken, reset= false} = {}){
       if(reset) {
@@ -64,11 +79,6 @@ var store = new Vuex.Store({
         window.location.reload();
       }
     }
-  },
-  getters: {
-    appHeight: state => state.appHeight,
-    regRules: state => state.regRules,
-    appRefreshToken: state => state.appRefreshToken
   },
   modules: { auth, bill_get, bill_add }
 })

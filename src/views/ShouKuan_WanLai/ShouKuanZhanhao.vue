@@ -24,16 +24,8 @@
                 </van-col>
             </van-row>
         </div>
-        <!-- 子路由 -->
-        <!-- <transition name="van-slide-right">
-            <div class="erji-view" v-if="isOpenErji">
-                <keep-alive>
-                    <router-view ></router-view>
-                </keep-alive>
-            </div>
-        </transition> -->
-        <van-popup :overlay="false" get-container="body"  v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
-            <transition name="van-fade">
+        <van-popup :overlay="false" get-container="body"  v-model="isErjiRoute" position="right" class="popup-fullsize">
+            <transition leave-active-class="van-fade-leave-active">
                 <router-view @remove_done="removeDone()" @save_done="saveDone()"></router-view>
             </transition>
         </van-popup>
@@ -58,7 +50,7 @@
         computed: {
             isErjiRoute: {
                 get(){
-                    return this.$route.name == 'bill_get_skzh_add'
+                    return this.$route.path.includes('/bill_get_skzh/add')
                 },
                 set(){}
             },
@@ -73,8 +65,7 @@
                     console.log(this.$route);
                     this.$router.push({path: './bill_get_skzh/add', query: {mode: 'edit',id: el.id}})
                 }else {
-                             this.$emit('select_skzh', el)
-                
+                    this.$emit('select_skzh', el)
                 }
             },
             getData(){
@@ -122,7 +113,7 @@
             height: auto;
             overflow: auto;
             padding: 15px;
-            padding-bottom: 70px;
+            padding-bottom: 100px;
             .card {
                 .wh100(@h: fit-content);
                 padding: 10px 0px;

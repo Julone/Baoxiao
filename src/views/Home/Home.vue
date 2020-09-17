@@ -1,10 +1,11 @@
 <template>
   <div class="home_container">
-    <header>
+    <header stickyTop>
       <div class="h_title">
         <div transparent></div>
         <span>首页</span>
-        <accountPicker :maxlen='6' class="account-picker" white size="mini" ></accountPicker></div>
+        <accountPicker :maxlen='6' class="account-picker" white size="mini"></accountPicker>
+      </div>
       <div class="h_button_group">
         <div class="h_button" @click="onHbtnClick(el)" v-for="el in h_button" :key="el.icon">
           <div class="icon">
@@ -14,23 +15,19 @@
         </div>
       </div>
     </header>
-    <main>
-      <!-- <van-grid :border="false" clickable>
-        <van-grid-item icon="description" text="发票抬头" />
-        <van-grid-item icon="after-sale" text="里程补贴" />
-        <van-grid-item icon="records" text="发票导入" />
-        <van-grid-item icon="paid" text="第三方消费" />
-      </van-grid> -->
-    </main>
-    <van-cell class="marginTop" title="清除缓存" @click="appClearCache()" clickable is-link icon="delete">
-    </van-cell>
-
+    <danjuList></danjuList>
+    <!-- <van-cell class="marginTop" title="清除缓存" @click="appClearCache()" disabled clickable is-link icon="delete">
+    </van-cell> -->
   </div>
 </template>
 <script>
-import {mapActions, mapGetters} from 'vuex'
+  import {
+    mapActions,
+    mapGetters
+  } from 'vuex'
+
   export default {
-    
+
     data() {
       return {
         h_button: [{
@@ -47,7 +44,9 @@ import {mapActions, mapGetters} from 'vuex'
             to: {
               path: '/bill/add'
             },
-            disabled: true
+            func: function(){
+              llApp.WebCallWechatInvoices()
+            }
           },
           {
             icon: 'bill',
@@ -56,21 +55,28 @@ import {mapActions, mapGetters} from 'vuex'
               path: '/bill/get_type'
             }
           }
-        ]
+        ],
+    
       }
     },
     computed: {
       ...mapGetters(['userinfo'])
     },
+    components:{
+      danjuList: ()=>import('./Home_DajuList.vue')
+    },
     methods: {
-      ...mapActions(['appAuthStart','appClearCache']),
-      onHbtnClick(el){
-        if(el.disabled) return this.$toast('正在维护');
+      ...mapActions(['appAuthStart', 'appClearCache']),
+      onHbtnClick(el) {
+        if (el.func) return el.func();
         this.$router.push(el.to);
       },
+      
     },
-    created(){
-      this.appAuthStart({apptoken: this.$route.query.apptoken});
+    created() {
+      this.appAuthStart({
+        apptoken: this.$route.query.apptoken
+      });
     }
   }
 </script>
@@ -81,21 +87,23 @@ import {mapActions, mapGetters} from 'vuex'
       color: white;
 
       .h_title {
-        .flex(@j:center);
+        .flex(@j: center);
         padding: 10px 15px 5px;
         font-weight: 700;
         letter-spacing: 2px;
         font-size: 14px;
         position: relative;
-       
-        & > div{
+
+        &>div {
           flex: 1;
         }
-        .account-picker{
+
+        .account-picker {
           text-align: right;
         }
-        &>span{
-          flex:1;
+
+        &>span {
+          flex: 1;
           text-align: center;
         }
       }
@@ -127,11 +135,19 @@ import {mapActions, mapGetters} from 'vuex'
     }
 
     main {
-      padding: -10px 20px;
+      padding: 0px 0px 100px;
 
       .van-grid-item__content {
         // padding:12px 10px;
         zoom: .9;
+      }
+
+      .my-swipe .van-swipe-item {
+        color: #fff;
+        font-size: 20px;
+        line-height: 60px;
+        text-align: center;
+        background-color: #39a9ed;
       }
     }
 

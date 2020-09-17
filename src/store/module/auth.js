@@ -70,6 +70,10 @@ export default {
             return Promise.reject(false);
           });
       }
+      var windowWidth = window.innerWidth;
+      if(windowWidth >= 640){
+        window.location.href = './index-pc.html'
+      }
     },
     updateAccountList({ state, commit }) {
       state.isUserInfoLoading = true;

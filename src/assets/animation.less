@@ -1,0 +1,54 @@
+@media(prefers-reduced-motion: no-preference){ //开启动画时候
+    .ios-from-bottom-enter-active {
+        animation: 300ms ios-from-bottom both linear
+    }
+    .ios-from-bottom-leave-active {
+        animation: 180ms ios-from-bottom2  linear  both
+    }
+    .flip-list-move {
+        transition: transform 1s;
+    }
+}
+.van-slide-down2-leave-active{
+    animation: van-slide-down-leave2 0.3s both ease-in;
+    @keyframes van-slide-down-leave2 {
+        to {
+          transform: translate3d(0, -100%, 0);
+          opacity: 0;
+        }
+    }
+}
+.van-slide-up2-leave-active{
+    animation: van-slide-up-leave2 0.3s both ease-in;
+    @keyframes van-slide-up-leave2 {
+        from {
+          transform: translate3d(0, 100%, 0);
+          opacity: 0;
+        }
+    }
+}
+
+@keyframes ios-from-bottom {
+    from {
+        transform: translate3d(0,10vh,0) scale(.9) rotateX(0deg);
+        opacity: 0;
+        transform-origin: bottom;
+    }
+    to {
+        transform: translate3d(0,0,0) scale(1) rotateX(0deg);
+        opacity: 1;
+        transform-origin: bottom;
+    }
+}
+@keyframes ios-from-bottom2 {
+    from {
+        transform: translate3d(0,0,0) scale(1) rotateX(0deg);
+        opacity: 1;
+        transform-origin: bottom;
+    }
+    to {
+        transform: translate3d(0,-10vh,0) scale(1) rotateX(0deg);
+        opacity: 0;
+        transform-origin: bottom;
+    }
+}

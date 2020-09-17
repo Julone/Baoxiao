@@ -1,0 +1,972 @@
+<template>
+    <div class="bill_add_container">
+        <div class="bill_add_wrapper" ref="mainContent">
+            <van-nav-bar :title="edit_mode?'费用明细':'新建费用'" fixed placeholder left-text="返回" left-arrow
+                @click-left="$store.dispatch('appGoback')">
+                <template #right>
+                    <accountPicker zoom=".85"></accountPicker>
+                </template>
+            </van-nav-bar>
+            <van-form ref="form" @submit="onSubmit" novalidate :show-error="false">
+             
+                <van-cell-group v-if="split_mode" class="marginBottom" v-cloak>
+                    <div slot="title" class="flex" style="justify-content:space-between">
+                        <span>
+                            拆分总金额: <bill-money>{{split_totalMoney}}</bill-money>
+                        </span>
+                        <van-button size="mini" type="info" plain bgless borderless native-type="button" icon="add-o" @click="onSplitAdd()">继续拆分
+                        </van-button>
+                    </div>
+                    <van-cell class="avg_cell" @click="onSplitCellClick(el)" clickable is-link v-for="(el,index) in form.cf_list" :key="el.id" >
+                            <template #icon>
+                                <div style="margin-right: 4px">
+                                    {{index + 1}}. 
+                                </div>
+                            </template>
+                            <template #title>
+                                <div>
+                                    <van-tag type="primary" plain v-if="el.id == edit_id"> 正在编辑</van-tag>
+                                    <span v-else> {{el.fylxmc}}</span>
+                                </div>
+                            </template>
+                        <span v-if="el.cfbs == 1">可拆: <bill-money>{{split_leftMoney}}</bill-money></span>
+                        <span v-if="el.cfbs == 2"><bill-money>{{el.cfje}}</bill-money></span>
+                    </van-cell>
+                    <van-cell class="avg_cell" v-if="!isSplitMatched" clickable is-link >
+                            <template #icon>
+                                <div style="margin-right: 4px">
+                                    {{form.cf_list.length + 1}}. 
+                                </div>
+                            </template>
+                            <template #title>
+                                <div>
+                                    <van-tag type="primary" plain >正在编辑</van-tag>
+                                </div>
+                            </template>
+                    </van-cell>
+                </van-cell-group>
+
+                <van-field v-model="form.xflx.fylxmc" clickable readonly name="xflx" class="xflx marginBottom"
+                    @click="go2sub({name: 'bill_add_expense_type'})" required :is-link="false" placeholder="请选择消费类型"
+                    left-icon="gold-coin-o" :rules="regRules.expenseType">
+                    <template #right-icon>
+                        <div>
+                            <van-tag class="marginRight" plain type="success" v-if="split_mode" >
+                                拆分{{isSplitMain? '主费用': isSplitSub? '子费用': '新建'}}
+                            </van-tag> 
+                            <van-tag plain type="success" v-if="form.xflx.dgbs == 0">个人</van-tag>
+                            <van-tag plain type="warning" v-if="form.xflx.dgbs == 1">对公</van-tag>
+                            <van-tag plain type="primary" v-if="form.xflx.dgbs == 2">全部</van-tag>
+                        </div>
+                    </template>
+                </van-field>
+                <div class="switch-cell marginTop" v-if="form.xflx.fylxmc">
+                    <div class="left">
+                        <span v-if="form.duisi == true">个人费用</span>
+                        <span v-if="form.duisi == false">对公业务</span>
+                    </div>
+                    <div class="right">
+                        <!-- v-if="form.xflx.dgbs == 2" -->
+                        <van-button v-if="form.xflx.dgbs == 2" native-type="button" size="mini" type="info" plain
+                            @click="form.duisi = !form.duisi" icon="exchange">
+                            切换为<span>{{form.duisi?'对公业务费用':'个人费用' }}</span>
+                        </van-button>
+                    </div>
+                </div>
+                <!-- 对私业务 -->
+                <template v-if="form.duisi">
+                    <van-field v-model="form.bcdp" label="消费金额" clickable required :rules="regRules.money" name="xfje">
+                        <template #input>
+                            <div class="bcdp-item">
+                                <span>CNY</span>
+                                <input type="number" step="0.01" placeholder="请输入金额" v-model="form.bcdp"
+                                    @blur="onMoneyBlur">
+                            </div>
+                        </template>
+                    </van-field>
+                    <van-cell title="消费日期" @click="openDatePopup" clickable required is-link>
+                        {{form.dprq | date('yyyy-MM-dd')}}
+                        <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                            <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="dataFormatter"
+                                @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                        </van-popup>
+                    </van-cell>
+                </template>
+                <!-- 对公全部到票业务 -->
+                <template v-if="!form.duisi">
+                    <van-cell-group>
+                        <van-field v-model="form.ywcj.mc" clickable readonly name="ywcj" @click="ywcjStatus = true"
+                            required is-link label="业务场景" placeholder="请选择业务场景">
+                        </van-field>
+                        <van-popup v-model="ywcjStatus" position="bottom">
+                            <van-picker show-toolbar :columns="ywcjColumns" @confirm="onYwcjConfirm" value-key="mc"
+                                @cancel="ywcjStatus = false">
+                            </van-picker>
+                        </van-popup>
+                    </van-cell-group>
+                    <template v-if="form.ywcj.id == 7184">
+                        <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
+                            name="xfje">
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="number" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
+                            {{form.dprq | date('yyyy-MM-dd')}}
+                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                    :max-date="maxDate" title="选择年月日" item-height="50vh" :formatter="dataFormatter"
+                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                            </van-popup>
+                        </van-cell>
+                        <van-field label="费用金额" v-model="form.bcdp" readonly required>
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="number" v-model="form.bcdp" readonly placeholder="自动计算">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell-group :border="false">
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                placeholder="请选择往来单位" readonly
+                                :rules="regRules.wanlai_danwei">
+                            </van-field>
+                        </van-cell-group>
+                    </template>
+                    <!-- 对公未到票业务 -->
+                    <template v-if="form.ywcj.id == 7185">
+                        <van-field v-model="form.bcdp" label="未到票" clickable required :rules="regRules.money"
+                            name="xfje">
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="text" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell title="预计到票日期" @click="openDatePopup" clickable required is-link>
+                            {{form.dprq | date('yyyy-MM-dd')}}
+                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="dataFormatter"
+                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                            </van-popup>
+                        </van-cell>
+                        <van-field label="费用金额" v-model="form.bcdp" readonly required>
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="text" v-model="form.bcdp" readonly placeholder="自动计算">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell-group :border="false">
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                placeholder="请选择往来单位" readonly
+                                :rules="regRules.wanlai_danwei">
+                            </van-field>
+                        </van-cell-group>
+                    </template>
+                    <!-- 对公到票核销业务 -->
+                    <template v-if="form.ywcj.id == 7186">
+                        <van-field v-model="form.bcdp" label="本次到票" clickable required :rules="regRules.money"
+                            name="xfje">
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="number" placeholder="请输入金额" v-model="form.bcdp" @blur="onMoneyBlur">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell title="到票日期" @click="openDatePopup" clickable required is-link>
+                            {{form.dprq | date('yyyy-MM-dd')}}
+                            <van-popup get-container="body" v-model="dprqStatus" position="bottom">
+                                <van-datetime-picker v-model="dprq_popup" type="date" :min-date="minDate"
+                                    :max-date="maxDate" title="选择年月日" item-height="30vh" :formatter="dataFormatter"
+                                    @confirm="onDateConfirm" @cancel="dprqStatus=false" />
+                            </van-popup>
+                        </van-cell>
+                        <van-field v-model="form.bcdp" label="费用金额" clickable required>
+                            <template #input>
+                                <div class="bcdp-item">
+                                    <span>CNY</span>
+                                    <input type="number" v-model="form.bcdp" readonly placeholder="自动计算">
+                                </div>
+                            </template>
+                        </van-field>
+                        <van-cell-group :border="false">
+                            <van-field v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable readonly
+                                @click="go2sub({path: '/bill/add/wanlai_danwei'})" required is-link name="wanlai_danwei"
+                                placeholder="请选择往来单位" 
+                                :rules="regRules.wanlai_danwei">
+                            </van-field>
+                        </van-cell-group>
+                        <van-cell-group border class="marginTop cell-group marginBottom">
+                            <div class="title">核销历史费用<span style="font-size:80%" class="right"
+                                    @click="getHexiaoFeiyong()">当前往来单位剩余: ￥{{form.wdpje}} 未到账</span></div>
+                            <div class="content" v-if="form.wanlai_danwei.zhmc">
+                                <!-- {{wdp_list}} -->
+                                <van-button @click="open_hexiao()" native-type="button" block borderless type="info"
+                                    plain>选取核销历史费用</van-button>
+                                <div v-if="form.wdp_list.length > 0" style="border-top:1px solid #ebedf0">
+                                    <van-swipe-cell v-for="(el,si) in form.wdp_list" :key="el.id">
+                                        <van-cell class="avg_cell hexiao-cell" clickable :is-link="false"
+                                            :label="$options.filters.date(el.rq)" :title="el.fylxmc">
+                                            <div class="money_date">
+                                                <span class="money">
+                                                    <small>￥</small>{{el.je | moneyFormat }}
+                                                </span>
+                                                <small>
+                                                    <small>剩余金额:</small><small>￥</small>{{el.syje | moneyFormat }}
+                                                </small>
+                                            </div>
+                                        </van-cell>
+                                        <template #right>
+                                            <van-button @click="form.wdp_list.splice(si,1)" h100 square text="删除"
+                                                type="danger" class="delete-button" />
+                                        </template>
+                                    </van-swipe-cell>
+                                </div>
+                                <div class="fapiao_total" v-if="form.wdp_list.length > 0">
+                                    <div class="left">
+                                    </div>
+                                    <div class="right">
+                                        <small>总计核销金额: </small> 
+                                        <bill-money>{{totalHexiaoMoney}}</bill-money>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="content" v-else>
+                                <div class="hexiao-tip">
+                                    <van-notice-bar color="#1989fa" background="transparent" left-icon="info-o">
+                                        请先选择到票金额和往来单位!
+                                    </van-notice-bar>
+                                </div>
+                            </div>
+                        </van-cell-group>
+                    </template>
+                </template>
+                <van-cell-group border>
+                    <van-field label="备注" border type="textarea" v-model="form.liuyan" name="liuyan" placeholder="请输入留言"
+                        show-word-limit maxlength="300"
+                        :rules="[{ pattern: /^[\s\S]{0,300}$/, message: '留言太长',trigger:'onBlur' }]">
+                    </van-field>
+                </van-cell-group>
+
+                <template v-if="form.ywcj.id != 7185">
+                    <!-- 发票 -->
+                    <van-cell-group border class="marginTop cell-group">
+                        <div class="title">发票上传 </div>
+                        <div class="content">
+                            <van-uploader :after-read="afterRead" :before-read="beforeRead" :disabled="uploading || !form.xflx.fylxmc">
+                                <van-button native-type="button" bgless style="width:100%" :loading="uploading"
+                                    loading-text="正在上传中..." block borderless type="info" plain icon="photograph">上传发票
+                                </van-button>
+                            </van-uploader>
+                            <div v-for="(el,fi) in fp_info" :key="el.id">
+                                <fapiao-item :readonly="isSplitSub" :fapiao="el" @fp-fill="onFapiaoFill" @fp-delete="onFapiaoDelete(fi)"> </fapiao-item>
+                            </div>
+                            <div class="fapiao_total" v-if="fp_info.length > 0">
+                                <div class="left" @click="onCopyMoney()">
+                                    <small>总计: </small> 
+                                    <bill-money>{{totalFapiaoMoney}}</bill-money>
+                                </div>
+                                <div class="right">
+                                    <van-button type="info" native-type="button" @click="fillTotalMoney" size="mini">
+                                        填充总金额</van-button>
+                                </div>
+                            </div>
+                        </div>
+                    </van-cell-group>
+                </template>
+                 <!-- 分摊 -->
+                <van-cell-group border class="marginTop cell-group">
+                    <div class="title">分摊信息</div>
+                    <div class="content" @click="openFentang()">
+                        <van-button v-if="!form.ft_info.length" native-type="button" block borderless type="info"
+                            plain @click="openFentang()" icon='balance-list'>
+                            新建分摊</van-button>
+                        <div v-if="form.ft_info.length">
+                            <van-cell class="avg_cell" border :title="el.cdbm.name" clickable is-link v-for="(el,index) in form.ft_info"
+                                :key="el.cdbl.id">
+                                <span slot="icon" marginRight >{{index+1}}.</span>
+                                <span><bill-money blueText>{{el.cdje}}</bill-money></span>
+                                <small> (<bill-money :sign="false" :accuracy="1">{{el.cdbl}}</bill-money>%)</small>
+                            </van-cell>
+                        </div>
+                    </div>
+                </van-cell-group>
+                <!-- 底部保存 -->
+                <div class="van-tabbar--fixed bottom_saved_buttons">
+                    <van-row>
+                        <van-col span="3">
+                            <van-button vertical @click="onSplit()" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block icon="cluster-o">拆分</van-button>
+                        </van-col>
+                        <van-col span="1"></van-col>
+                        <van-col span="6">
+                            <van-button vertical @click="edit_mode? onEditRemove(): onAddSaveAgain()" native-type="button" type="default" borderless
+                                style="background:rgb(247,247,247)" block :icon="edit_mode? 'delete' :'certificate'">
+                                {{edit_mode? '移除': split_mode? '继续拆分':'再记一笔'}}</van-button>
+                        </van-col>
+                        <van-col span="1"></van-col>
+                        <van-col span="13">
+                            <van-button @click="editmode? onEditSave(): onAddSave()" native-type="button" type="info" borderless block
+                                icon="success">确认保存
+                            </van-button>
+                        </van-col>
+                    </van-row>
+                </div>
+            </van-form>
+        </div>
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }"
+            get-container="body" :lock-scroll="!isErjiRoute">
+            <transition name="van-fade">
+                <router-view :formdata="form" @chooseXflx="chooseXflx" @chooseWldw="chooseWldw"
+                    @chooseHxfy="chooseHxfy"></router-view>
+            </transition>
+        </van-popup>
+    </div>
+</template>
+<script>
+    import {
+        bill_get_ywcj,
+        bill_set_feiyong,
+        bill_add_get_weidaopiao_money,
+        bill_get_feiyongInfo,
+        parse_info_from_base64,
+        bill_del_feiyong,
+        bill_get_wldw_by_name
+    } from 'api'
+    import {
+        dateFormat,
+        dialogConfirm,
+        copyText
+    } from '@/utils/utils'
+    import {
+        mapGetters
+    } from 'vuex'
+    import pictureCompress from 'picture-compressor-plus';
+  
+    import fapiaoHandler from './../../utils/fapiao';
+    // import {eq} from 'loadsh'
+    export default {
+        data() {
+            return {
+                // ywcjColumns: [],
+                ywcjStatus: false,
+                dprq_popup: new Date(),
+                dprqStatus: false,
+                minDate: new Date(2015, 0, 1),
+                maxDate: new Date(),
+                initOK: false,
+                fp_info: [],
+                form: {
+                    xflx: {},
+                    duisi: true,
+                    ywcj: {},
+                    bcdp: "",
+                    dprq: new Date(),
+                    wanlai_danwei: {},
+                    liuyan: '',
+                    ft_info: [],
+                    wdpje: 0,
+                    wdp_list: [],
+                    fp_info: [],
+                    cf_list: [],
+                    pfyid: 0
+                },
+                saveId: [],
+                uploading: false,
+                split_totalMoney:0,
+                split_leftMoney:0,
+            }
+        },
+        components: {
+            fapiaoItem: () => import('./../../components/Bill_FapiaoItem')
+        },
+        watch: {
+            async 'form.ywcj.id'(val) {
+                await this.$nextTick();
+                this.$refs.form && this.$refs.form.resetValidation();
+                this.getHexiaoFeiyong();
+            },
+            async 'form.xflx.id'(val) {
+                await this.$nextTick();
+                this.$refs.form && this.$refs.form.resetValidation();
+            },
+            async 'form.dprq'(val){
+                console.log(val,val instanceof Date);
+                if(val == 'Invalid Date') {
+                    this.form.dprq = new Date();
+                }
+            }
+        },
+        computed: {
+            isErjiRoute: {
+                get() {
+                    return this.$route.path.startsWith('/bill/add/')
+                },
+                set(val) {}
+            },
+            ...mapGetters({
+                ywcjColumns: 'ywcjList',
+                regRules: 'regRules'
+            }),
+            edit_mode() {
+                return this.$route.query.hasOwnProperty('edit_id') || false
+            },
+            split_mode(){
+                return Boolean(this.form.cf_list.length) || this.$route.query.hasOwnProperty('split_id') || false
+            },
+            totalFapiaoMoney() {
+                return this.fp_info.reduce((t, el) => {
+                    t += Number(el.invoice_money);
+                    return t;
+                }, 0).toFixed(2)
+            },
+            totalHexiaoMoney(){
+                return this.form.wdp_list.reduce((t, el) => {
+                        t += Number(el.syje);
+                        return t;
+                }, 0).toFixed(2)
+            },
+            isSplitMatched(){
+                return Boolean(this.form.cf_list.find(el => el.id == this.edit_id))
+            },
+            isSplitSub(){
+                return Boolean(this.form.cf_list.find(el => el.id == this.edit_id && el.cfbs == 2))
+            },
+            isSplitMain(){
+                return Boolean(this.form.cf_list.find(el => el.id == this.edit_id && el.cfbs == 1))
+            },
+            edit_id(){
+                return this.$route.query.edit_id || null
+            },
+            split_id(){
+                return this.$route.query.split_id || null
+            }
+        },
+        async created() {
+            if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
+                //二级路由处理
+                // this.$router.push({
+                //     name: 'bill_add'
+                // })
+            }
+            this.form.ywcj = this.ywcjColumns[0];
+            await this.getEditData()
+            await this.getSplitData();
+        },
+        methods: {
+            getEditData(){
+                if(!this.edit_id) return Promise.resolve(false);
+                return bill_get_feiyongInfo(this.edit_id).then(r => {
+                    var data = r.data || {};
+                    this.form = {
+                        bcdp: Number(data.je).toFixed(2),
+                        dprq: new Date(data.rq),
+                        ft_info: data.ft_info.map(el => {
+                            el.cdje = Number(el.je).toFixed(2);
+                            return el
+                        }),
+                        liuyan: data.bz || "",
+                        wanlai_danwei: data.wanlai_danwei || {},
+                        xflx: data.xflx,
+                        ywcj: data.ywcj,
+                        wdpje: 0,
+                        duisi: data.zhbj == 2,
+                        wdp_list: data.wdp_list.filter(Boolean),
+                        cf_list: data.cf_list,
+                        pfyid: data.pfyid
+                    };
+                    this.fp_info = data.fp_info.map(el => {
+                        var obj = JSON.parse(el.imgjson_info);
+                        for (var o in obj) {
+                            el[o] = obj[o]
+                        }
+                        el.imgurl = el.imgurl;
+                        el.id = el.id;
+                        return el
+                    });
+                    this.getHexiaoFeiyong();
+                }).catch(e => {
+                    setTimeout(()=>{
+                        this.$router.push({name: 'account'})
+                    },300)
+                })
+            },
+            getSplitData(){
+                if (this.split_mode) {
+                    var split_id = this.form.pfyid || this.split_id;
+                    console.log(split_id);
+                    if(!split_id) return;
+                    return bill_get_feiyongInfo(split_id).then(r => {
+                        var data = r.data || {};
+                        this.form.cf_list= data.cf_list.length == 0? [
+                            {cfje: 0,zje:data.je,id: data.id,cfbs:  1,fylxmc: data.xflx.fylxmc}
+                        ] :data.cf_list;
+                        this.getSplitMoney(data);
+                        if(!this.edit_id) {
+                            this.form.xflx= data.xflx;
+                            this.form.ywcj= data.ywcj;
+                            this.form.duisi=data.zhbj == 2;
+                            this.form.wanlai_danwei = data.wanlai_danwei;
+                        }
+                        this.fp_info = data.fp_info.map(el => {
+                            var obj = JSON.parse(el.imgjson_info);
+                            for (var o in obj) {
+                                el[o] = obj[o]
+                            }
+                            el.imgurl = el.imgurl;
+                            el.id = el.id;
+                            return el
+                        })
+                    }).catch(e => e);
+                }
+            },
+            getSplitMoney(data){
+                this.split_totalMoney = data.je;
+                this.getSplitLeftMoney();
+            },
+            getSplitLeftMoney(){
+                var isNewValue = this.isSplitMatched? 0: this.form.bcdp;
+                this.split_leftMoney = this.split_totalMoney - this.form.cf_list.reduce((t,el)=>{
+                   if(el.cfbs == 2 ) {
+                       t += Number(el.cfje);
+                   }
+                   return t
+               },0) - isNewValue
+            },
+            onSplitCellClick(el){
+                if(this.$route.query.edit_id == el.id) return;
+                this.$router.replace({query: {
+                    edit_id: el.id
+                }}).then(r=>{
+                    this.getEditData();
+                    this.getSplitData();
+                })
+            },
+            onSplitAdd(){
+                this.$router.replace({
+                    path: '/bill/add',
+                    query: {
+                        split_id: this.form.pfyid || this.split_id,
+                    }
+                }).then(r=>{
+                    this.form.bcdp = 0;
+                    this.getSplitData();
+                })
+            },
+            open_hexiao() {
+                this.$refs.form.validate('xfje').then(r => {
+                    this.go2sub({
+                        name: 'bill_add_hexiao'
+                    })
+                })
+            },
+            async onSplit(){
+                var split_id = this.form.pfyid;
+                if(!split_id) {
+                    var dislogResult = await this.$dialog.confirm({ title: '提示', message: '是否保存此费用, 保存后方可拆分' }).then(r => 'confirm').catch(e => 'cancel')
+                    if(dislogResult != 'confirm') return false; 
+                    var isPassed = await this.$refs.form.validate().then(r=>true).catch(e=>false);
+                    if(!isPassed) return false;
+                    var savedID = await this.onSubmit();
+                    if(!savedID) return false;
+                    return this.$router.push({path: '/bill/split', query: {'id': savedID}});
+                }
+                this.$router.push({path: '/bill/split', query: {'id': this.form.pfyid}});
+            },
+            fillTotalMoney() {
+                this.form.bcdp = this.totalFapiaoMoney;
+                this.$refs.form.scrollToField('xfje', false);
+                this.$toast.success('填充金额成功!');
+            },
+            async beforeRead(file) {
+                if (!file.type.includes('image')) return this.$toast('暂时只支持图片文件!');
+                if(this.isSplitSub) {
+                    return this.$toast('拆分子费用不能上传发票, 请前往拆分主费用!');
+                }
+            },
+            onCopyMoney() {
+                copyText(this.totalFapiaoMoney);
+                this.$toast.success('已复制总金额');
+            },
+            afterRead(object) {
+                this.uploading = true;
+                pictureCompress({
+                    img: object.content,
+                    width: 1500,
+                    height: 1500,
+                    fit: 'scale',
+                    type: 'jpg'
+                }).then(res => {
+                    parse_info_from_base64(res.img.replace(/^data:image\/\w+;base64,/, "")).then(r => {
+                        try {
+                            var json = JSON.parse(r.data.data);
+                            var imgurl = r.data.imgPath;
+                            var ret = json.data.ret.find(el => el.templateSign != 'others') || json.data
+                                .ret[0];
+                            var obj = fapiaoHandler(ret);
+                            if (this.fp_info.length == 0) {
+                                this.onFapiaoFill(obj, false);
+                            }
+                            console.log(ret);
+                            console.log(JSON.stringify(obj.detail))
+                            obj.imgurl = imgurl.replace('../', 'http://webt.lilang.com:9001/');
+                            obj.imgjson_row = JSON.stringify(ret);
+                            obj.imgjson_info = JSON.stringify(obj);
+                            if(this.fp_info.find(el=>el.uuid == obj.uuid)) {
+                                return this.$toast.fail('已存在此发票, 请勿重复添加!')
+                            }
+                            this.fp_info.push(obj);
+                            console.log(json)
+                        } catch (e) {
+                            console.error(e);
+                            this.$toast.fail('发票格式错误!')
+                        }
+                    }).catch(e => {
+                        var errmsg = e.message || '识别失败, 请稍后重试!'
+                        errmsg = errmsg.replace('Error:', '');
+                        this.$toast.fail(errmsg)
+                    }).finally(() => {
+                        this.uploading = false
+                    })
+                }).catch(e => {
+                    // console.log(e);
+                    this.$toast.fail('图片压缩失败, 请稍后重试!')
+                })
+
+            },
+            onFapiaoDelete: dialogConfirm(function (i) {
+                this.fp_info.splice(i, 1)
+            }),
+            async onFapiaoFill(obj, showToast = true) {
+                if (obj.type == 'others') {
+                    showToast && this.$toast('暂不支持未知发票!')
+                    return false;
+                }
+                this.form.bcdp = obj.invoice_money;
+                this.form.dprq = obj.invoice_date;
+                var zhmc = obj.invoice_wanlai;
+                if (!this.form.duisi && zhmc) {
+                    bill_get_wldw_by_name(zhmc).then(r => {
+                        if (r.data.length > 0) {
+                            this.form.wanlai_danwei = r.data[0];
+                            showToast && this.$toast.success('智能填充完成!')
+                        } else {
+                            return Promise.reject(false);
+                        }
+                    }).catch(e => {
+                        copyText(zhmc);
+                        this.$toast('找不到此往来单位,请手动查找!');
+                        return false;
+                    }).finally(() => {
+                        this.getHexiaoFeiyong();
+                    })
+                } else {
+                    showToast && this.$toast.success('智能填充完成!')
+                }
+            },
+            getHexiaoFeiyong() {
+                if (this.form.ywcj.id == 7189 || this.form.ywcj.id == 7186) {
+                    var zhmc = this.form.wanlai_danwei.zhmc;
+                    bill_add_get_weidaopiao_money({
+                        zhmc
+                    }).then(r => {
+                        console.log(r);
+                        this.form.wdpje = Number(r.data).toFixed(2);
+                    }).catch(e => {
+                        console.log(e);
+                    })
+                }
+            },
+            go2sub(route) {
+                route = Object.assign(route, {
+                    params: {
+                        avoidRefresh: true
+                    }
+                })
+                this.$router.push(route)
+            },
+            onMoneyBlur() {
+                this.$refs.form.validate('xfje').then(r => {
+                    this.form.bcdp = Number(this.form.bcdp).toFixed(2);
+                    this.form.cf_list.forEach(el=>{
+                        if(el.id == this.edit_id){
+                            el.cfje = this.form.bcdp
+                        }
+                        if(el.id == this.edit_id && el.cfbs == 1){
+                            this.split_totalMoney = this.form.bcdp;
+                        }
+                    })
+                    this.getSplitLeftMoney();  
+                }).catch(e => {
+                    this.$toast.fail(e.message);
+                })
+            },
+
+            async onEditRemove() {
+                var isDelete = await this.$dialog.confirm({
+                    title: '删除',
+                    message: '是否删除?',
+                }).then(r => true).catch(e => false);
+                if (!isDelete) return;
+                bill_del_feiyong(this.edit_id).then(r => {
+                    this.$toast.success('删除成功');
+                    if(this.split_id) return this.$router.push({name: 'bill_split', query: {'id': this.split_id}});
+                    this.$router.push({
+                        name: 'account',
+                        params: {
+                            del_id: this.edit_id
+                        }
+                    })
+                }).catch(e => e)
+            },
+            async onEditSave() {
+                this.$refs.form.validate().then(r => {
+                    this.onSubmit().then(async r => {
+                        if(this.split_id) return this.$router.push({name: 'bill_split', query: {'id': this.split_id}});
+                        this.$router.push({
+                            path: '/account',
+                            params: {
+                                edit_id: this.edit_id
+                            }
+                        })
+                    }).catch(e=>e)
+                })
+            },
+            async onAddSave() {
+                this.$refs.form.validate().then(r => {
+                    this.onSubmit().then(r => {
+                        console.log(r);
+                        if(this.split_id) return this.$router.push({name: 'bill_split', query: {'id': this.split_id}});
+                        this.$router.push({
+                            path: '/account',
+                        }).then(r => {
+                            this.$eventBus.$emit('refreshView')
+                        })
+                    }).catch(e=>e)
+                })
+            },
+            async onAddSaveAgain() {
+                this.$refs.form.validate().then(r => {
+                    this.onSubmit().then(async r => {
+                        this.$eventBus.$emit('refreshView')
+                    }).catch(e=>e)
+                })
+            },
+            onSubmit() {
+                var data = {
+                    djlx : this.form.ywcj.djlx,
+                    djlb : this.form.ywcj.id,
+                    ny : dateFormat(this.form.dprq, 'yyyyMM'),
+                    rq : dateFormat(this.form.dprq, 'yyyy-MM-dd'),
+                    zhid : this.form.wanlai_danwei.id,
+                    zhmc : this.form.wanlai_danwei.zhmc,
+                    je : this.form.bcdp,
+                    zhbj : '0',
+                    bz : this.form.liuyan,
+                    fydlmc : this.form.xflx.fydlmc,
+                    fylxmc : this.form.xflx.fylxmc,
+                    fylxid : this.form.xflx.id,
+                    dgbs : this.form.duisi ? 2 : 1,
+                    ft_info : this.form.ft_info,
+                    fp_info : this.fp_info,
+                    wdp_list : this.form.wdp_list,
+                    edit_id: this.edit_id,
+                    split_id: this.split_id
+                }
+                console.log(data);
+                return bill_set_feiyong(data).then(r => {
+                    if (r.errcode == 0) {
+                        this.saveId.push(r.data);
+                        this.$toast.success('保存成功!');
+                        return Promise.resolve(r.data);
+                    } else {
+                        this.$toast.fail('保存失败!');
+                        return Promise.reject(false)
+                    }
+                })
+            },
+            openFentang() {
+                return this.$refs.form.validate('xfje').then(r => {
+                    this.$router.push({
+                        name: 'bill_add_fentang'
+                    })
+                }).catch(e => {
+                    this.$refs.form.scrollToField('xflx');
+                    this.$toast.fail(e.message);
+                })
+            },
+            chooseXflx(val) {
+                this.form.xflx = val;
+                this.form.duisi = val.dgbs == 0;
+                this.$store.dispatch('appGoback');
+            },
+            chooseWldw(val) {
+                this.form.wanlai_danwei = val;
+                this.$store.dispatch('appGoback');
+                this.getHexiaoFeiyong();
+            },
+            chooseHxfy(val) {
+                this.form.wdp_list = val;
+                this.$store.dispatch('appGoback');
+            },
+            onYwcjConfirm(value) {
+                this.form.ywcj = value;
+                this.ywcjStatus = false;
+            },
+            dataFormatter(type, val) {
+                return type === 'year' ? `${val}年` : type === 'month' ? `${val}月` : type === 'day' ? `${val}日` : val;
+            },
+            onDateConfirm() {
+                this.dprqStatus = false;
+                this.form.dprq = this.dprq_popup;
+            },
+            openDatePopup() {
+                this.dprqStatus = true;
+                this.dprq_popup = this.form.dprq;
+            }
+        }
+    }
+</script>
+<style lang="less">
+    .bill_add_container {
+        .bill_add_wrapper {
+            .van-form {
+                padding-bottom: 80px;
+
+                .van-cell--required::before {
+                    left: 6px;
+                    margin-top: 3px;
+                }
+            }
+
+            .xflx {
+                .van-field__left-icon i {
+                    font-size: 26px;
+                    color: #777;
+                    margin-left: 5px;
+                }
+            }
+
+            .switch-cell {
+                .flex(@j: space-between; );
+                padding: 10px 5px 10px;
+                background: white;
+                margin-botttom: -10px;
+                font-size: 13px;
+
+                .left {
+                    border-left: 5px solid @j_main_color;
+                    padding-left: 6px;
+                    font-size: 600;
+                }
+            }
+
+            .van-cell:not(.avg_cell) {
+
+                .van-cell__title,
+                .van-field__label {
+                    margin-right: 0;
+                    width: 100px;
+                    flex: none;
+                }
+
+                .van-cell__value {
+                    flex: 1;
+                    text-align: left;
+                    color: #323233
+                }
+            }
+
+            .avg_cell {
+                .van-cell__title {
+                    .textRowOverflow(1);
+                }
+            }
+
+
+            .marginTop {
+                margin-top: 10px;
+            }
+
+
+
+            .cell-group {
+                .title {
+                    @height: 36px;
+                    font-weight: 700;
+                    font-size: @height /2.8;
+                    line-height: @height;
+                    height: @height;
+                    padding-left: 18px;
+                    border-bottom: 1px solid #ebedf0;
+                    position: relative;
+
+                    &::before {
+                        content: '';
+                        width: 5px;
+                        height: 36%;
+                        background: @j_main_color;
+                        display: block;
+                        position: absolute;
+                        top: 32%;
+                        left: 6px;
+                    }
+
+                    .right {
+                        float: right;
+                        padding-right: 18px;
+                        .flex();
+                        height: 100%;
+                    }
+                }
+
+                .content {
+
+                    // height: 60px;;
+                    .hexiao-tip {
+                        padding: 10px 5px;
+                        font-size: 90%;
+                        text-align: center;
+
+                        .van-notice-bar {
+                            width: 220px;
+                            margin: 0 auto;
+                        }
+                    }
+                }
+            }
+
+            .van-uploader {
+                width: 100%;
+                ;
+            }
+
+            .van-uploader__input-wrapper {
+                flex: 1;
+            }
+
+            .fapiao_total {
+                .flex(@j: space-between);
+                .border(top);
+                padding: 8px 10px;
+            }
+
+
+
+        }
+
+
+    }
+</style>

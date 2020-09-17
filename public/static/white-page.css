@@ -1,0 +1,36 @@
+#white-page{
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: white;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    text-align: center;
+    display: none;
+  }
+ 
+  #white-page .logo{
+    margin: 0 auto;
+    height: 11vw;
+    font-size: 10vw;
+    font-weight: 1000;
+    font-family: unset;
+    margin-top: 69vh;
+  }
+  #white-page span{
+    font-size: 4vw;
+    line-height: 9vw;
+    letter-spacing: 1vw;
+    padding-left: 1vw;
+    width: 50%;
+    margin: 2vw auto 0;
+    text-align: center;
+    color: rgb(201, 201, 201);
+    font-weight: 500;
+    border-top: 1px solid rgb(243, 243, 243);
+  }

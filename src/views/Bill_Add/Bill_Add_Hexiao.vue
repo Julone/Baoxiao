@@ -16,7 +16,7 @@
                 :label="$options.filters.date(el.rq)"
                  :title="el.fylxmc" 
                     @click="chooseItem(el)"  >
-                    <van-checkbox shape="square" v-model="el.checked" style="margin-right:10px" slot="icon"/>
+                    <van-checkbox shape="square" v-model="el.checked" style="margin-right:12px" slot="icon"/>
                     <div class="money_date">
                         <span class="money">
                               <small>￥</small>{{el.je | moneyFormat }}
@@ -32,8 +32,15 @@
         </div>
         <div class="van-tabbar--fixed bottom_saved_buttons">
             <van-row>
-                <van-col span="24">
-                    <van-button @click="onSave" native-type="button" type="info" borderless block>保存
+                <van-col span="5">
+                    <van-button @click="onSelectAll()" native-type="button" type="" borderless block>
+                        {{selectToggle? '反选':'全选' }}
+                    </van-button>
+                </van-col>
+                <van-col span="1">
+                </van-col>
+                <van-col span="18">
+                    <van-button @click="onSave()" native-type="button" type="info" borderless block>确定核销
                     </van-button>
                 </van-col>
             </van-row>
@@ -58,7 +65,8 @@
                 loading: false,
                 finished: false,
                 error: false,
-                errmsg: ''
+                errmsg: '',
+                selectToggle: false
             }
         },
         props: ['formdata'],
@@ -68,6 +76,12 @@
         methods: {
             onSave(){
                 this.$emit('chooseHxfy',this.list.filter(el=> el.checked))
+            },
+            onSelectAll(){
+                this.selectToggle = !this.selectToggle;
+                this.list.forEach(el=>{
+                    el.checked = this.selectToggle;
+                })
             },
             chooseItem(el){
                 console.log(el);
@@ -92,6 +106,7 @@
         created() {
             console.log(this.$options);
             console.log(this.$route);
+            console.log(this.formdata);
         },
         
     }

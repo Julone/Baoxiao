@@ -1,3 +1,4 @@
+import createBillAddRoute from './bill_add';
 export default {
     path: '/account',
     name: 'account',
@@ -8,6 +9,6 @@ export default {
         savedPosition: {x:0,y:0},
     },
     children: [
-    
+        createBillAddRoute('/account')
     ]
 }

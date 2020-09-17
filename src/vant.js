@@ -7,7 +7,7 @@ import {
     Tabs,Tab,DatetimePicker,Stepper,Uploader,DropdownMenu,DropdownItem,
     SwipeCell, Popup, Lazyload, Empty, Loading,Image, Skeleton, Progress, Search, 
     Swipe, SwipeItem, NoticeBar, Row,Col,Rate, Picker, Sidebar,SidebarItem,
-    Switch,ContactCard
+    Switch,ContactCard, NumberKeyboard
 } from 'vant'
 
 DatetimePicker.props['swipe-duration'] = {type:Number, default: 600};
@@ -22,4 +22,4 @@ Vue.use(Toast).use(Dialog).use(Divider).use(Checkbox).use(CheckboxGroup)
 .use(Row).use(Col).use(Rate).use(Picker).use(Sidebar).use(SidebarItem)
 .use(DatetimePicker).use(Stepper).use(Uploader)
 .use(DropdownMenu).use(DropdownItem).use(Overlay)
-.use(Grid).use(GridItem).use(Switch).use(ContactCard)
+.use(Grid).use(GridItem).use(Switch).use(ContactCard).use(NumberKeyboard)

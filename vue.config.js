@@ -31,20 +31,10 @@ module.exports = {
               target: 'http://192.168.35.136:15003/',
               changeOrigin: true,
             },
-            '^/apicc': {
-                target: 'http://192.168.36.152:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/apicc': ''
-                }
+            '^/wxSystemPars.ashx':{
+              target: 'http://tm.lilanz.com/oa/api',
+              changeOrigin: true
             },
-            '^/apidd': {
-              target: 'http://192.168.36.152:8081',
-                  changeOrigin: true,
-                  pathRewrite: {
-                      '^/apidd': ''
-                  }
-              },
             '^/api': {
                 target: 'http://192.168.36.171:8080',
                 changeOrigin: true,

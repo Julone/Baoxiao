@@ -1,20 +1,17 @@
 <template>
   <div id="app">
-    <!-- 顺序不能反 -->
-    <!-- <transition name="van-fade" mode="out-in"> -->
+    <!-- <transition name="van-fade"> -->
       <keep-alive :include="['account']">
-        <router-view :key="freshToken" :style="{minHeight: appHeight +'px'}"></router-view>
+          <router-view :key="freshToken" :style="{minHeight: appHeight +'px'}"></router-view>
       </keep-alive>
     <!-- </transition> -->
-    <!-- <transition name="van-fade" mode="out-in"> -->
-      <!-- <router-view :key="freshToken" v-if="!$route.meta.keepAlive" :style="{minHeight: appHeight +'px'}"></router-view> -->
-    <!-- </transition> -->
+
     <van-tabbar v-model="activeTabbar" v-if="isShowTabbar">
-      <van-tabbar-item name="home" icon="home-o">首页</van-tabbar-item>
-      <van-tabbar-item name="account" icon="balance-list-o">账本</van-tabbar-item>
-      <van-tabbar-item name="shenpi" icon="friends-o">审批</van-tabbar-item>
-      <van-tabbar-item name="wode" icon="setting-o">我的</van-tabbar-item>
-</van-tabbar>
+          <van-tabbar-item name="home" icon="home-o">首页</van-tabbar-item>
+          <van-tabbar-item name="account" icon="balance-list-o">账本</van-tabbar-item>
+          <van-tabbar-item name="shenpi" icon="friends-o">审批</van-tabbar-item>
+          <van-tabbar-item name="wode" icon="setting-o">我的</van-tabbar-item>
+    </van-tabbar>
   </div>
 </template>
 <script>
@@ -28,6 +25,9 @@ export default {
   computed:{ 
     isShowTabbar(){
       return this.$route.meta && this.$route.meta.openTabbar
+    },
+    isErjiRoute(){
+      return this.$route.path == '/account/bill/edit'
     },
     activeTabbar: {
       get(){
@@ -49,9 +49,13 @@ export default {
     console.log(this.$route)
   },
   mounted(){
-    this.onAppResize();
     window.addEventListener('resize', this.onAppResize);
+    this.onAppResize();
     this.$eventBus.$on('refreshView', ()=> this.freshToken += 1);
+    this.$eventBus.$on('scrollTop', (target = 'html,body')=> {
+      var t = document.querySelector(target);
+      this.$scrollTopTo(t, 0, 300);
+    })
   }
 }
 </script>

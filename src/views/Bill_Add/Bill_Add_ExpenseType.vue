@@ -164,6 +164,7 @@ export default {
       this.SET_RENCENT_XFLX(el);
     },
     async onRefresh() {
+      this.activeKey = 0;
       await this.init_expenseType(true);
       this.handleData();
     },
@@ -193,11 +194,7 @@ export default {
       var a = Array.from(document.querySelectorAll(".side-right .sub_title"))[
         i
       ];
-      container.scrollTo({
-        left: 0,
-        top: a.offsetTop - container.offsetTop,
-        behavior: "smooth",
-      });
+      this.$scrollTopTo( container, a.offsetTop - container.offsetTop, 300)
     },
     async handleData() {
       console.log("正在处理数据格式");

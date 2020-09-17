@@ -1,145 +1,128 @@
 <template>
     <div class="bill_get__container">
-        <van-nav-bar :title="'新建' + bill_type.mc" fixed placeholder left-text="返回" left-arrow @click-left="$store.dispatch('appGoback')" />
-        <div class="mainContent" ref="mainContent" >
-            <van-form v-if="initOK" ref="form" @submit="onSubmit">
-            <van-field v-model="form.bxsy" clickable name="bxsy" required is-link label="报销事由" placeholder="请输入报销事由"
-                :rules="[{ required: true, message: '请输入报销事由',trigger:'onBlur' }]">
-            </van-field>
-            <van-cell-group>
-                <van-field v-model="form.gstt.name" label="公司抬头" clickable 
-                    required is-link name="gstt" placeholder="请选择公司抬头" readonly
-                    :rules="[{ required: true, message: '请输入公司抬头',trigger:'onChange' }]">
+        <van-nav-bar :title="navTitle" fixed placeholder left-text="返回" left-arrow
+            @click-left="$store.dispatch('appGoback')" />
+        <div class="mainContent">
+            <van-form ref="form" :show-error="false">
+                <van-field v-model="form.zhbz" clickable name="zhbz" required label="报销事由" placeholder="请输入报销事由"
+                    :rules="[{ required: true, message: '请输入报销事由',trigger:'onBlur' }]">
                 </van-field>
-            </van-cell-group>
-            <van-cell-group>
-                <van-field v-model="form.cdr.name" label="承担人" clickable 
-                    required is-link name="gstt" placeholder="请选择承担人" readonly
-                    :rules="[{ required: true, message: '请输入承担人',trigger:'onChange' }]">
+                <van-field v-model="form.cdr" label="承担人" clickable required name="gstt" placeholder="请选择承担人"
+                    readonly :rules="[{ required: true, message: '请输入承担人',trigger:'onChange' }]">
                 </van-field>
-            </van-cell-group>
-            <van-cell-group>
-                <van-field v-model="form.cdbm.name" label="承担部门" clickable @click="go2sub({name: 'bill_get_dept'})"
-                    required is-link name="cdbm" placeholder="请选择承担部门" readonly
+                <van-field v-model="form.cdbm.name" label="承担部门" clickable @click="openDeptPopup()" required is-link
+                    name="cdbm" placeholder="请选择承担部门" readonly
                     :rules="[{ required: true, message: '请选择承担部门',trigger:'onChange' }]">
                 </van-field>
-            </van-cell-group>
-            <van-cell-group border>
-                <van-field label="备注" border type="textarea" v-model="form.beizhu" name="liuyan" placeholder="请输入留言"
+                <van-field v-if="bill_type.config.showWLDW" v-model="form.wanlai_danwei.zhmc" label="往来单位" clickable
+                    @click="go2sub({path: '/bill/get/wanlai_danwei'})" required is-link name="wanlai_danwei"
+                    placeholder="请选择往来单位" readonly :rules="regRules.wanlai_danwei">
+                </van-field>
+                <van-field label="备注" border type="textarea" v-model="form.bz" name="liuyan" placeholder="请输入留言"
                     show-word-limit maxlength="300"
-                    :rules="[{ pattern: /^[\s\S]{0,300}$/, message: '留言太长',trigger:'onBlur' }]">
+                    :rules="regRules.beizhu">
                 </van-field>
-            </van-cell-group>
-            <van-cell-group border class="marginTop cell-group">
-                <!-- <div class="title">分摊信息</div> -->
-                <van-field v-model="form.skzh.account" label="收款账户" required>
-                    <template #extra>
-                        <div>
-                            <van-button native-type="button" size="mini" type="info">个人</van-button>
-                            <van-button native-type="button" size="mini">单位</van-button>
+                <van-cell-group border class="marginTop cell-group" v-if="bill_type.config.showSKZH">
+                    <!-- <div class="title">分摊信息</div> -->
+                    <van-field v-model="form.skzh.account" >
+                        <div slot="label" nowrap>收款账户<small>(可选)</small></div>
+                        <div noEvent nowrap slot="extra">
+                            <van-button tag="div" size="mini" :type="bill_type.dgbs == 2? 'info': 'default'" >个人</van-button>
+                            <van-button tag="div" size="mini" :type="bill_type.dgbs == 1? 'info': 'default'" >单位</van-button>
                         </div>
-                    </template>
-                    <template #input>
-                        <div></div>
-                    </template>
-                </van-field>
-                <div class="content" @click="go2sub({path: '/bill/get/bill_get_skzh'})">
-                    <van-button v-if="!form.skzh.account" native-type="button" block borderless type="info" plain>
-                        选择收款账户</van-button>
-                    <div style="padding:10px 20px;" v-else>
-                        <div style="margin-bottom:10px">银行户名</div>
-                        <van-cell paddingless :title="form.skzh.account" :label="form.skzh.label"></van-cell>
+                        <div slot="input"></div>
+                    </van-field>
+                    <div class="content" @click="go2sub({path: '/bill/get/bill_get_skzh'})">
+                        <van-button v-if="!form.skzh.yhzh" tag="div" block borderless type="info" plain>
+                            选择收款账户</van-button>
+                        <div style="padding:2vw 4vw;" v-else>
+                            <div style="margin-bottom:1vw; font-weight: 400;font-size:4vw;color:gray">{{form.skzh.zhmc}}
+                            </div>
+                            <van-cell paddingless :label="form.skzh.khyh">
+                                <h3 style="letter-spacing:.1vw" v-text="form.skzh.yhzh" slot="title"></h3>
+                            </van-cell>
+                        </div>
                     </div>
-                </div>
-            </van-cell-group>
-            <van-cell-group border class="marginTop cell-group">
-                <van-field v-model="form.skzh.account" label="费用明细" required>
-                    <template #input>
-                        <div></div>
-                    </template>
-                </van-field>
-                <div class="content">
-                    <div class="account-item" v-for="el in form.minxi" :key="el.id">
-                        <div class="left">
-                            <div class="icon">
-                                <van-icon :name="el.icon"></van-icon>
-                            </div>
-                            <div class="title">
-                                <div>{{el.expenseType}}</div>
-                                <small style="color:#aaa">{{el.zhmc}}</small>
-                            </div>
-                        </div>
-                        <div class="right">
-                            <div class="top"><small>¥</small>{{el.money}}</div>
-                            <div class="bottom">消费时间 {{el.expenseTime }}</div>
+                </van-cell-group>
+                <van-cell-group border class="marginTop cell-group "> 
+                    <!-- feiyongMinxi -->
+                    <van-field v-model="fyListCount" label="费用明细" required :rules="regRules.fyList"
+                    input-align="right"
+                    >
+                        <van-button slot="input"  type="danger" size="mini" native-type="button" plain hairline
+                        icon="delete" @click="onFyListClear()"
+                        >清除所有</van-button>
+                    </van-field>
+                    <div class="content">
+                        <van-swipe-cell v-for="(el) in form.fyList" :key="el.id">
+                            <account-item @click.native="onMinxiItemClick(el, null, true)" :checkMode="false" :item="el">
+                            </account-item>
+                            <template #right>
+                                <van-button style="height:100%" square text="编辑" type="info"
+                                    @click="onMinxiItemClick(el, null, true)" />
+                                <van-button style="height:100%" square text="删除" type="danger"
+                                    @click="onMinxiItemDelete(el.id)" />
+                            </template>
+                        </van-swipe-cell>
+                        <van-row>
+                            <van-col span="12" border-right>
+                                <van-button :to="{path: '/bill/get/bill/add'}" tag="div" type="default" borderless
+                                    block>
+                                    <a class="blue-text">新建费用</a>
+                                </van-button>
+                            </van-col>
+                            <van-col span="1"></van-col>
+                            <van-col span="11">
+                                <van-button @click="go2sub({path:'/bill/get/bill_get_account'})" tag="div"
+                                    type="default" borderless block>
+                                    <a class="blue-text">从账本导入</a>
+                                </van-button>
+                            </van-col>
+                        </van-row>
+                    </div>
+                </van-cell-group>
+                <van-cell-group border class="marginTop cell-group" hidden>
+                    <div class="title">核销借款</div>
+                    <div class="content">
+                        <van-button @click="go2sub({path: '/bill/get/bill_get_jiekuandan'})" tag="div" block borderless
+                            type="info" plain>选取借款核销</van-button>
+                        <small align="center" style="padding-bottom:20px;width:100%;text-align:center;display:block">
+                            当前往来单位下剩余: ￥0.00</small>
+                    </div>
+                </van-cell-group>
+                <van-cell-group border class="marginTop cell-group" hidden>
+                    <div class="title">附件</div>
+                    <div class="content" style="padding:10px">
+                        <van-uploader :after-read="afterRead" />
+                    </div>
+                </van-cell-group>
+                <!-- 底部保存 -->
+                <div class="van-tabbar--fixed bottom_saved_buttons">
+                    <div class="qyyf">
+                        <div class="top">
+                            <small>企业应付:</small> <bill-money>{{fyListTotal}}</bill-money>
                         </div>
                     </div>
                     <van-row>
-                        <van-col span="12" border-right>
-                            <van-button :to="{name: 'bill_add',query:{from: $route.name}}" native-type="button"
-                                type="default" borderless block>
-                                <a class="blue-text">新建费用</a>
-                            </van-button>
+                        <van-col span="12">
+                            <van-button @click="onBaocun" tag="div" type="default" borderless
+                                style="background:rgb(247,247,247)" block>保存</van-button>
                         </van-col>
                         <van-col span="1"></van-col>
                         <van-col span="11">
-                            <van-button @click="go2sub({name:'bill_get_minxi_from_account'})" native-type="button"
-                                type="default" borderless block>
-                                <a class="blue-text">从账本导入</a>
+                            <van-button @click="onTijiao" tag="div" type="info" borderless block>
+                                {{edit_id? '更新': '提交'}}
                             </van-button>
                         </van-col>
                     </van-row>
                 </div>
-            </van-cell-group>
-            <van-cell-group border class="marginTop cell-group">
-                <div class="title">核销借款</div>
-                <div class="content">
-                    <van-button @click="go2sub({name: 'bill_get_jiekuandan'})" native-type="button" block borderless
-                        type="info" plain>选取借款核销</van-button>
-                    <small align="center" style="padding-bottom:20px;width:100%;text-align:center;display:block">
-                        当前往来单位下剩余: ￥0.00</small>
-                </div>
-            </van-cell-group>
-            <van-cell-group border class="marginTop cell-group">
-                <div class="title">附件</div>
-                <div class="content" style="padding:10px">
-                    <van-uploader :after-read="afterRead" />
-                </div>
-            </van-cell-group>
-
-            <!-- 底部保存 -->
-            <div class="van-tabbar--fixed bottom_saved_buttons">
-                <div class="qyyf">
-                    <div class="top">
-                        企业应付: 
-                    </div>
-                </div>
-                <van-row>
-                    <van-col span="12">
-                        <van-button @click="onBaocun" native-type="button" type="default" borderless
-                            style="background:rgb(247,247,247)" block>保存</van-button>
-                    </van-col>
-                    <van-col span="1"></van-col>
-                    <van-col span="11">
-                        <van-button @click="onTijiao" native-type="button" type="info" borderless block> 提交
-                        </van-button>
-                    </van-col>
-                </van-row>
-            </div>
-        </van-form>
+            </van-form>
         </div>
-        <!-- <transition name="van-slide-right">
-            <div class="erji-view" :style="{height: appHeight +'px'}" v-if="isErjiRoute">
-                <keep-alive>
-                    <router-view @select_dept="select_dept" @select_skzh="select_skzh"></router-view>
-                </keep-alive>
-            </div>
-        </transition> -->
-        <van-popup :overlay="false" get-container="body"  v-model="isErjiRoute" :lock-scroll="!isErjiRoute" position="right" :style="{ width: '100%',height:'100%' }" >
-            <transition name="van-fade">
-                <keep-alive>
-                <router-view @select_dept="select_dept" @select_skzh="select_skzh" @select_minxi="select_minxi"></router-view>
-                </keep-alive>
+        <van-popup :overlay="false" v-model="isErjiRoute" position="right" class="popup-fullsize" get-container="body" :lock-scroll="false">
+            <transition leave-active-class="van-fade-leave-active">
+                <router-view @select-dept="select_dept" :activeItem="form" @select_skzh="select_skzh"
+                    @select_fyList="select_fyList" :minxiList="form.fyList" @bill_get_add_item="bill_get_add_item"
+                    @chooseWldw="chooseWldw" :bill_type="bill_type" :wanlai_danwei="form.wanlai_danwei"></router-view>
             </transition>
         </van-popup>
     </div>
@@ -148,75 +131,159 @@
     import {
         mapGetters
     } from 'vuex'
+    import {
+        bill_set_danju,
+        bill_get_feiyongInfo,
+        bill_get_danju,
+        bill_get_computeJE
+    } from 'api'
+    import {
+        dateFormat,
+        dialogConfirm
+    } from './../../utils/utils';
     export default {
         data() {
             return {
                 form: {
-                    bxsy: "",
-                    gstt: {
-                        name: '利郎(中国)有限公司'
-                    },
+                    zhbz: "",
                     cdbm: {},
-                    cdr: {
-                        name: '李祖龙'
-                    },
-                    beizhu: "",
+                    bz: "",
                     skzh: {},
-                    minxi: []
+                    fyList: [],
+                    cdr: '',
+                    djlx: {},
+                    wanlai_danwei: {}
                 },
-                initOK: true,
-
+                type_id: this.$route.query.type_id || null,
+                fyListTotal: 0
             }
         },
         computed: {
-            isErjiRoute:{
-                get(){
-                    return this.$route.path.startsWith('/bill/get/')
+            isErjiRoute: {
+                get() {
+                    return this.$route.path.includes('/bill/get/')
                 },
-                set(val){}
+                set(val) {}
             },
-            ...mapGetters(['appHeight','bill_get_type']),
-            bill_type(){
-                return this.bill_get_type(this.$route.query.id);
-            }
+            ...mapGetters(['appHeight', 'bill_get_type', 'userinfo', 'regRules']),
+            bill_type() {
+                return this.bill_get_type(this.type_id) || {}
+            },
+            edit_id() {
+                return this.$route.query.edit_id || null
+            },
+            navTitle(){
+                return `${this.edit_id? '编辑':'新建'}【${this.bill_type.mc || '未知单据类型'}】`
+            },
+            fyListInRoute(){
+                var fyList = this.$route.query.fyList || '';
+                return fyList
+            },
+            fyListCount: {
+                get(){
+                    return this.form.fyList.length
+                },
+                set(){
+
+                }
+            },
         },
         watch: {
             isErjiRoute: {
                 immediate: true,
-                async handler(val) {
-                    await  this.$nextTick();
+                handler(val) {
+                    if (val) {
+                        document.body.classList.add('van-overflow-hidden');
+                    } else {
+                        document.body.classList.remove('van-overflow-hidden');
+                    }
                 }
             },
-        },
-        created() {
-            if (this.isErjiRoute && !this.$route.params.avoidRefresh) {
-                //二级路由处理
-                this.$router.push({
-                    name: 'bill_get_new'
+            "form.fyList.length"(val, val2){
+                this.firstFillWanlai();
+                bill_get_computeJE(this.form.fyList).then(r=>{
+                    console.log(r);
+                    this.fyListTotal = r.data.je;
                 })
             }
-            if(!this.bill_type) {
-                this.$toast.fail('请先选择单据类型!')
-                this.$router.push('/bill/get_type');
+        },
+        async created() {
+            if (this.edit_id) { //编辑
+                await bill_get_danju(this.edit_id).then(r => {
+                    var data = r.data;
+                    data.fyList = data.fyList.map(this.handleRowData);
+                    this.form = data;
+                    this.type_id = r.data.djlx.id || null;
+                })
+            }else{ //新建
+                if(this.fyListInRoute.length){
+                    await bill_get_feiyongInfo(this.fyListInRoute,true).then(r=>{
+                        this.form.fyList = r.data.map(this.handleRowData);
+                    })
+                }
+            }
+            this.form.cdr = this.userinfo.cname;
+            this.form.djlx = this.bill_type;
+            if(this.bill_type.config.showWLDW == false) {
+                Object.defineProperty(this.form,'wanlai_danwei',{value:'',writable:false})
+            }
+            if(this.bill_type.config.showSKZH == false) {
+                Object.defineProperty(this.form,'skzh',{value:'',writable:false})
             }
         },
         methods: {
+            firstFillWanlai(force = false){
+                if(!this.form.wanlai_danwei.zhmc && this.form.fyList.length > 0 && this.bill_type.dgbs == 1 || force) {
+                    this.form.wanlai_danwei = this.form.fyList[0].wanlai_danwei;
+                }
+            },
             afterRead() {
 
             },
-            onSubmit() {
-
+            openDeptPopup() {
+                var route = {
+                    path: '/bill/get/bill_get_dept',
+                    query: {
+                        breadcrumb: this.form.cdbm.breadcrumb,
+                        keyword: this.form.cdbm.keyword,
+                    }
+                }
+                this.go2sub(route)
             },
-            select_minxi(minxi){
-               this.form.minxi.push(minxi);
+            select_fyList(fyListList) {
+                this.form.fyList.push(...fyListList);
+                this.firstFillWanlai(true);
                 this.$store.dispatch('appGoback')
             },
-            select_dept(dept) {
+            select_dept({
+                dept
+            }) {
                 this.form.cdbm = dept;
                 this.$store.dispatch('appGoback')
             },
+            bill_get_add_item({
+                saved_id
+            }) {
+                bill_get_feiyongInfo(saved_id).then(r => {
+                    this.form.fyList.push(this.handleRowData(r.data));
+                })
+                this.$store.dispatch('appGoback');
+            },
+            handleRowData(ele) {
+                ele.expenseType = ele.xflx.fylxmc;
+                ele.money = Number(ele.je).toFixed(2);
+                ele.expenseTime = dateFormat(ele.rq, 'MM-dd');
+                ele.icon = ele.zhbj == 1 ? 'hotel-o' : 'user-o';
+                ele.hasSelected = true;
+                return ele;
+            },
             select_skzh(skzh) {
+                console.log(skzh);
                 this.form.skzh = skzh;
+                this.$store.dispatch('appGoback');
+            },
+            chooseWldw(val) {
+                this.form.wanlai_danwei = val;
                 this.$store.dispatch('appGoback');
             },
             go2sub(route) {
@@ -227,22 +294,87 @@
                 })
                 this.$router.push(route)
             },
-            onBaocun() {
-                this.$toast.success('保存成功');
-                this.$router.push('/')
+             onFyListClear:dialogConfirm(function(){
+                this.form.fyList = [];
+                this.form.wanlai_danwei = {};
+            }),
+            onMinxiItemDelete(id) {
+                var i = this.form.fyList.findIndex(el => el.id == id);
+                if (i != -1) {
+                    this.form.fyList.splice(i, 1);
+                } else {
+                    this.$toast.fail('删除失败!');
+                };
+                if(this.form.fyList.length == 0) {
+                    this.form.wanlai_danwei = {};
+                }
             },
             onTijiao() {
-                this.$toast.success('保存成功');
-                this.$router.push('/')
+                this.onSubmit().then(r=>{
+                    this.$toast.success('提交成功!')
+                    this.$router.push('/')
+                }).catch(e=>{
+                    console.warn(e)
+                })
+            },
+            onBaocun() {
+                this.onSubmit().then(r=>{
+                    this.$toast.success('提交成功!');
+                    this.$eventBus.$emit('refreshView')
+                }).catch(e=>{
+                    console.warn(e)
+                })
+            },
+            onSubmit() {
+                return new Promise( (resolve, reject) => {
+                    this.$refs.form.validate().then(r => {
+                        if (this.edit_id) {
+                            Object.assign(this.form, {
+                                id: this.edit_id
+                            })
+                        }
+                        bill_set_danju(this.form).then(res => {
+                            resolve(res)
+                        }).catch(e => {
+                            reject(e)
+                        })
+                    }).catch(e => {
+                        reject(e)
+                    })
+                });
+            },
+            onMinxiItemClick(el, acc, bool) {
+                if (bool) {
+                    this.$router.push({
+                        path: '/bill/get/bill/add',
+                        query: {
+                            edit_id: el.id
+                        }
+                    })
+                }
             }
         }
     }
 </script>
 <style lang="less">
     .bill_get__container {
-        padding-bottom: 100px;
-        .mainContent{
-            overflow: hidden;
+
+        .van-form {
+            // overflow: hidden;
+            padding-bottom: 120px;
+
+        }
+
+        .qyyf {
+            .top {
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+        }
+        .feiyongMinxi{
+            .van-field__body{
+                display: none;
+            }
         }
     }
 </style>

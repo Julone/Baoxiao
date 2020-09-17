@@ -1,4 +1,5 @@
 import store from '@/store';
+
 export const dateFormat = function (time, fmt = 'yyyy-MM-dd') {
     time = time instanceof Date ?  time : new Date(time);
     var o = {
@@ -45,31 +46,7 @@ export function timeAgo(time) {
         return "刚刚";
     }
 }
-export const axios_dataToFormdata = function dataToFormdata(data = {}) {
-        try {
-            return Object.keys(data).reduce((t, el) => {
-                var value = data[el];
-                if ({}.toString.call(value) === '[object Object]') {
-                    value = JSON.stringify(value)
-                }
-                t.push(el + "=" + value);
-                return t;
-            }, []).join('&')
-        } catch (e) {
-            return ""
-        }
-    }
-export const axios_addToken = function addToken(config) {
-    let token = store.getters.apptoken;
-    if (config.data) {
-        token && (config.data.token = token);
-    } else {
-        config.data = {
-            token: token
-        };
-    }
-    return config
-}
+
 
 export const addScript = function(url, callback){
     if(!url) return;
@@ -88,12 +65,13 @@ export const dialogConfirm = (callback, options = {}) => {
                 message: options.message || '是否删除?',
         }).then(r=> {
             callback.apply(_this,arg);
-        }).catch(e=>{
-            console.log(e)
-        })
+        }).catch(noop)
    }
 }
-export const randomString = ({withNumber=true, length = 8} = {}) => {
+export function noop (a, b, c){
+    console.log('this is noop function!')
+}
+export const randomString = (length = 8, withNumber = true) => {
     var enCharPool = 'abcdefghijklmnopqrstuvwxyz';
     var numCharPool = '0123456789';
     var pool = withNumber?enCharPool + numCharPool : enCharPool;
@@ -110,4 +88,44 @@ export const copyText = (data="", trim = false) => {
     oInput.select(); // 选择对象;
     document.execCommand("Copy"); // 执行浏览器复制命令
     oInput.remove()
+}
+export const scrollTopTo = function(scroller, to, duration, callback) {
+    var X = scroller.scrollLeft || scroller.scrollX;
+    var currentY = ("scrollTop" in scroller)? scroller.scrollTop : scroller.scrollY ;
+    var isDown = currentY < to;
+    var frames = duration * 1 === 0 ? 1 : Math.round(duration * 1 / 16);
+    var step = (to - currentY) / frames;
+    function animate() {
+        currentY += step;
+        if (isDown && currentY > to || !isDown && currentY < to) {
+        currentY = to;
+        }
+        scroller.scrollTo(X, currentY);
+        if (isDown && currentY < to || !isDown && currentY > to) {
+            window.requestAnimationFrame(animate)
+        } else if (callback) {
+            callback();
+        }
+    }
+    animate();
+}
+export const scrollLeftTo = function(scroller, to, duration, callback) {
+    var Y = scroller.scrollLeft || scroller.scrollX;
+    var currentX = scroller.scrollLeft || scroller.scrollX;
+    var isDown = currentX < to;
+    var frames = duration === 0 ? 1 : Math.round(duration * 1 / 16);
+    var step = (to - currentX) / frames;
+    function animate() {
+        currentX += step;
+        if (isDown && currentX > to || !isDown && currentX < to) {
+        currentX = to;
+        }
+        scroller.scrollTo(currentX, Y);
+        if (isDown && currentX < to || !isDown && currentX > to) {
+            window.requestAnimationFrame(animate)
+        } else if (callback) {
+            callback();
+        }
+    }
+    animate();
 }

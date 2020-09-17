@@ -1,14 +1,8 @@
 import NProgress from 'nprogress'; // progress bar
 import 'nprogress/nprogress.css';
 import Axios from "axios";
-import store from "./../store";
-import {axios_dataToFormdata,axios_addToken} from '@/utils/utils'
-import {
-  Toast,
-  Notify,
-  Dialog
-} from 'vant';
-import router from './../router'
+import {axios_dataToFormdata } from './utils'
+import { Toast, } from 'vant';
 var axiosInitialConfig = {
   timeout: 10000,
   withCredentials: false,
@@ -25,7 +19,7 @@ var axiosBase = Axios.create(axiosInitialConfig);
 // HTTPrequest拦截
 axiosBase.interceptors.request.use(config => {
   NProgress.remove();
-  NProgress.start(); // start progress bar;
+  NProgress.start();
   return config;
 }, error => {
   return Promise.reject(error)
@@ -35,17 +29,18 @@ axiosBase.interceptors.request.use(config => {
 axiosBase.interceptors.response.use(res => {
   NProgress.done()
   const status = Number(res.status) || 200
-  const errmsg = res.data.errmsg || '抱歉, 垃圾服务器崩溃了~';
+  const errmsg = res.data.errmsg || '抱歉,服务器崩溃了';
   const errcode = res.data.errcode;
   if (errcode != 0 || status != 200) {
-  Toast({ message: errmsg + "\n\n" + JSON.stringify(res.data), type: 'fail', forbidClick: false, duration: 4000 ,className: 'apiError'});
-    return Promise.reject(res.data.errmsg);
+      Toast({ message: errmsg + "\n\n" + JSON.stringify(res.data), type: 'fail', forbidClick: false, duration: 4000 ,className: 'apiError'});
+    return Promise.reject(res.data);
   } else {
     return Promise.resolve(res.data);
   }
 }, error => {
   NProgress.done();
-  return Promise.reject(new Error(error))
+  Toast({ message: error.message, type: 'text', forbidClick: false, duration: 1000});
+  return Promise.reject({errcode: -1, errmsg: error.message})
 })
 
 export const axiosByFormData = (params) => {
@@ -64,19 +59,16 @@ export const axiosByJSON = (params) => {
   return axiosBase(Object.assign(params, config))
 }
 export const axiosSilent = (config) => {
-    var axiosInstance = Axios.create(axiosInitialConfig);
+    let axiosInstance = Axios.create(axiosInitialConfig);
+    axiosInstance.interceptors.request.use(config => { return config; }, error => { return Promise.reject(error) });
     axiosInstance.interceptors.response.use(res => {
-      const status = Number(res.status) || 200
+      const status = Number(res.status) || 200;
       const errcode = res.data.errcode;
-      if (errcode != 0 || status != 200) {
-        return Promise.reject(res.data.errmsg);
-      } else {
-        return Promise.resolve(res.data);
-      }
+      if (errcode != 0 || status != 200) { return Promise.reject(res.data); } else { return Promise.resolve(res.data); }
     }, error => {
-      return Promise.reject(new Error(error))
+      return Promise.reject(error)
     })
     config.data = axios_dataToFormdata(config.data);
-    return axiosInstance({...config}) 
+    return axiosInstance({...config});
 }
-export default axiosByFormData;
+export default Axios;
