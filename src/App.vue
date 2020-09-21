@@ -42,6 +42,12 @@ export default {
   methods: {
     ...mapMutations(['set_appHeight']),
     onAppResize(){
+      if(process.env.NODE_ENV=='production'){
+        var windowWidth = window.innerWidth;
+        if(windowWidth >= 640){
+          window.location.href = './index-pc.html'
+        }
+      }
       this.set_appHeight(window.innerHeight)
     }
   },

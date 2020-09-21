@@ -57,22 +57,19 @@ export default {
       if (validatenull(state.userinfo)) {
         apptoken = process.env.NODE_ENV == "development" ? "a5eadf424fde93a" : apptoken;
         return auth_get_user_info(apptoken)
-          .then((r) => {
-            commit("SET_APPTOKEN", apptoken);
-            commit("SET_ACCOUNT", r.data.account);
-            commit("SET_USERINFO", r.data.info[0]);
-            validatenull(state.activeAccount) &&
-            dispatch("choose_active_account", r.data.account[0]);
-            Toast("欢迎您, " + state.userinfo.cname);
-            return Promise.resolve(true);
-          })
-          .catch((e) => {
-            return Promise.reject(false);
-          });
-      }
-      var windowWidth = window.innerWidth;
-      if(windowWidth >= 640){
-        window.location.href = './index-pc.html'
+              .then((r) => {
+                commit("SET_APPTOKEN", apptoken);
+                commit("SET_ACCOUNT", r.data.account);
+                commit("SET_USERINFO", r.data.info[0]);
+                if(validatenull(state.activeAccount)) {
+                  dispatch("choose_active_account", r.data.account[0]);
+                }
+                Toast("欢迎您, " + state.userinfo.cname);
+                return Promise.resolve(true);
+              })
+              .catch((e) => {
+                return Promise.reject(false);
+              });
       }
     },
     updateAccountList({ state, commit }) {

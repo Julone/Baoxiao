@@ -92,7 +92,7 @@ export function bill_del_danju(dj_id){
 }
 
 export function bill_get_danju_type(){
-    return axiosByFormData({
+    return axiosSilent({
         url: url + '/getDjlxList',
         method: 'POST',
         data: {

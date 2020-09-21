@@ -3,7 +3,43 @@
         <van-nav-bar :title="navTitle" fixed placeholder left-text="返回" left-arrow
             @click-left="$store.dispatch('appGoback')" />
         <div class="mainContent">
-            <van-form ref="form" :show-error="false">
+            <van-form v-if="bill_type.alias == 'jiekuan'" ref="form" :show-error="false">
+                <van-field v-model="form.jkyy" clickable name="jkyy" required label="借款原因" placeholder="请输入借款原因"
+                    :rules="[{ required: true, message: '请输入借款原因',trigger:'onBlur' }]">
+                </van-field>
+                <van-field v-model="form.jkje" type="number" clickable name="jkje" required label="借款金额" placeholder="请输入借款金额"
+                    :rules="[{ required: true, message: '请输入借款金额',trigger:'onBlur' }]">
+                </van-field>
+                <van-field v-model="form.cdbm.name" label="部门" clickable @click="openDeptPopup()" required is-link
+                    name="cdbm" placeholder="请选择部门" readonly
+                    :rules="[{ required: true, message: '请选择部门',trigger:'onChange' }]">
+                </van-field>
+               <van-cell-group>
+                    <van-field :border="false" v-model="form.ghrq" name="ghrq" label="预计归还日期" @click="ghrqStatus=true" clickable required is-link>
+                        <template #input>
+                            {{form.ghrq | date('yyyy-MM-dd')}}
+                        </template>
+                    </van-field>
+                    <van-popup get-container="body" v-model="ghrqStatus" position="bottom" @closed="onDateClosed">
+                        <van-datetime-picker type="date" :min-date="minDate" title="选择年月日" item-height="50vh" 
+                            @confirm="onDateConfirm" @cancel="ghrqStatus=false" ref="datePicker"/>
+                    </van-popup>
+               </van-cell-group>
+                <van-field v-model="form.cdr" label="借款人" clickable required name="gstt" placeholder="请选择借款人"
+                    readonly :rules="[{ required: true, message: '请输入借款人',trigger:'onChange' }]">
+                </van-field>
+                <van-field v-model="form.hkjh" type="textarea" clickable name="hkjh" required label="还款计划" placeholder="请输入还款计划"
+                    :rules="[{ required: true, message: '请输入还款计划',trigger:'onBlur' }]" show-word-limit maxlength="300" 
+                    :autosize="{ maxHeight: 100, minHeight: 50 }">
+                </van-field>
+                <van-cell-group border class="marginTop cell-group">
+                    <billGetSkzh v-bind="{ form, bill_type, go2sub}" ></billGetSkzh>
+                </van-cell-group>
+
+
+            </van-form>
+
+            <van-form v-else ref="form" :show-error="false">
                 <van-field v-model="form.zhbz" clickable name="zhbz" required label="报销事由" placeholder="请输入报销事由"
                     :rules="[{ required: true, message: '请输入报销事由',trigger:'onBlur' }]">
                 </van-field>
@@ -23,26 +59,7 @@
                     :rules="regRules.beizhu">
                 </van-field>
                 <van-cell-group border class="marginTop cell-group" v-if="bill_type.config.showSKZH">
-                    <!-- <div class="title">分摊信息</div> -->
-                    <van-field v-model="form.skzh.account" >
-                        <div slot="label" nowrap>收款账户<small>(可选)</small></div>
-                        <div noEvent nowrap slot="extra">
-                            <van-button tag="div" size="mini" :type="bill_type.dgbs == 2? 'info': 'default'" >个人</van-button>
-                            <van-button tag="div" size="mini" :type="bill_type.dgbs == 1? 'info': 'default'" >单位</van-button>
-                        </div>
-                        <div slot="input"></div>
-                    </van-field>
-                    <div class="content" @click="go2sub({path: '/bill/get/bill_get_skzh'})">
-                        <van-button v-if="!form.skzh.yhzh" tag="div" block borderless type="info" plain>
-                            选择收款账户</van-button>
-                        <div style="padding:2vw 4vw;" v-else>
-                            <div style="margin-bottom:1vw; font-weight: 400;font-size:4vw;color:gray">{{form.skzh.zhmc}}
-                            </div>
-                            <van-cell paddingless :label="form.skzh.khyh">
-                                <h3 style="letter-spacing:.1vw" v-text="form.skzh.yhzh" slot="title"></h3>
-                            </van-cell>
-                        </div>
-                    </div>
+                    <billGetSkzh v-bind="{ form, bill_type, go2sub}" ></billGetSkzh>
                 </van-cell-group>
                 <van-cell-group border class="marginTop cell-group "> 
                     <!-- feiyongMinxi -->
@@ -96,8 +113,10 @@
                         <van-uploader :after-read="afterRead" />
                     </div>
                 </van-cell-group>
+                
+            </van-form>
                 <!-- 底部保存 -->
-                <div class="van-tabbar--fixed bottom_saved_buttons">
+            <div class="van-tabbar--fixed bottom_saved_buttons">
                     <div class="qyyf">
                         <div class="top">
                             <small>企业应付:</small> <bill-money>{{fyListTotal}}</bill-money>
@@ -116,7 +135,6 @@
                         </van-col>
                     </van-row>
                 </div>
-            </van-form>
         </div>
         <van-popup :overlay="false" v-model="isErjiRoute" position="right" class="popup-fullsize" get-container="body" :lock-scroll="false">
             <transition leave-active-class="van-fade-leave-active">
@@ -152,10 +170,17 @@
                     fyList: [],
                     cdr: '',
                     djlx: {},
-                    wanlai_danwei: {}
+                    wanlai_danwei: {},
+                    //个人借款单，
+                    jkyy: '',
+                    jkje: '',
+                    ghrq: new Date(),
+                    hkjh: ''
                 },
                 type_id: this.$route.query.type_id || null,
-                fyListTotal: 0
+                fyListTotal: 0,
+                ghrqStatus: false,
+                minDate: new Date(),
             }
         },
         computed: {
@@ -224,12 +249,6 @@
             }
             this.form.cdr = this.userinfo.cname;
             this.form.djlx = this.bill_type;
-            if(this.bill_type.config.showWLDW == false) {
-                Object.defineProperty(this.form,'wanlai_danwei',{value:'',writable:false})
-            }
-            if(this.bill_type.config.showSKZH == false) {
-                Object.defineProperty(this.form,'skzh',{value:'',writable:false})
-            }
         },
         methods: {
             firstFillWanlai(force = false){
@@ -239,6 +258,16 @@
             },
             afterRead() {
 
+            },
+            async onDateClosed(){
+                await this.$nextTick();
+                var p = this.$refs.datePicker.getPicker();
+                var d = this.$options.filters.date(this.form.ghrq,'yyyy-MM-dd')
+                p.setValues(d.split('-'))
+            },
+            onDateConfirm(val){
+                this.form.ghrq = val;
+                this.ghrqStatus = false
             },
             openDeptPopup() {
                 var route = {
